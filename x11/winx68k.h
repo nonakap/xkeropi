@@ -39,6 +39,9 @@ extern GtkWidget *menubar;
 extern GtkWidget *drawarea;
 extern GdkPixmap *splash_pixmap;
 
+void install_idle_process(void);
+void uninstall_idle_process(void);
+
 #define	NELEMENTS(array)	((int)(sizeof(array) / sizeof(array[0])))
 
 #endif //winx68k_gtkwarpper_h

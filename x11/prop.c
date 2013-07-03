@@ -37,8 +37,8 @@ static BYTE X68KeyName[128][10] = {
 	"         \0", "         \0", "         \0", "         \0", "         \0", "         \0", "         \0", "         \0", 
 };
 
-static BYTE MIDI_TYPE_NAME[4][8] = {
-	"LA不富", "GM不富", "GS不富", "XG不富"
+static const char MIDI_TYPE_NAME[4][3] = {
+	"LA", "GM", "GS", "XG"
 };
 
 BYTE KeyTableBk[512];
@@ -389,21 +389,12 @@ static GtkWidget *create_mouse_note(void);
 static GtkWidget *create_others_note(void);
 
 static void
-delete_event(GtkWidget *w, GdkEvent *ev, gpointer data)
-{
-
-	UNUSED(w);
-	UNUSED(ev);
-	UNUSED(data);
-	gtk_main_quit();
-}
-
-static void
 dialog_destroy(GtkWidget *w, GtkWidget **wp)
 {
 
         UNUSED(wp);
 	gtk_widget_destroy(w);
+	install_idle_process();
 }
 
 /*
@@ -419,6 +410,8 @@ PropPage_Init(void)
 	GtkWidget *ok_button;
 	GtkWidget *cancel_button;
 	GtkWidget *accept_button;
+
+	uninstall_idle_process();
 
 	ConfigProp = Config;
 
@@ -511,7 +504,7 @@ static const struct {
 	const char *str;
 	int rate;
 } sample_rate[] = {
-	{ "No Sound",     0 },
+	{ "No Sound", 0     },
 	{ "11kHz",    11025 },
 	{ "22kHz",    22050 },
 	{ "44kHz",    44100 },
@@ -523,7 +516,6 @@ static const struct {
 	gfloat value;
 	gfloat min;
 	gfloat max;
-
 	size_t offset;
 } sound_right_frame[] = {
 	{ "Buffer size",    50.0, 10.0, 200.0, offsetof(Win68Conf,BufferSize) },
@@ -631,6 +623,7 @@ sample_rate_button_clicked(GtkButton *b, gpointer d)
 {
 	
 	UNUSED(b);
+
 	ConfigProp.SampleRate = (DWORD)((long)d);
 }
 
@@ -639,6 +632,7 @@ adpcm_lpf_button_clicked(GtkButton *b, gpointer d)
 {
 
 	UNUSED(d);
+
 	ConfigProp.Sound_LPF = GTK_TOGGLE_BUTTON(b)->active;
 }
 
@@ -660,24 +654,32 @@ vol_adj_value_changed(GtkAdjustment *adj, gpointer d)
 /*
  * Midi note
  */
-static const char *midi_init[] = {
-	"LA",
-	"GM",
-	"GS",
-	"XG",
-};
+static void midi_enable_button_clicked(GtkButton *b, gpointer d);
+static void midi_send_reset_button_clicked(GtkButton *b, gpointer d);
+static void midi_mimpi_button_clicked(GtkButton *b, gpointer d);
+static void midi_init_entry_changed(GtkEditable *e, gpointer d);
+
+typedef struct {
+	GtkWidget *init_combo;
+	GtkWidget *init_label;
+	GtkWidget *reset_button;
+	GtkWidget *mimpi_button;
+	GtkWidget *mimpi_entry;
+	GtkWidget *mimpi_browse_button;
+} midi_init_item_t;
 
 static GtkWidget *
 create_midi_note(void)
 {
-
 	GtkWidget *vbox;
 	GtkWidget *button;
+	GtkWidget *enable_button;
+	GtkWidget *mimpi_button;
 	GtkWidget *label;
 	GtkWidget *combo;
 	GtkWidget *entry;
 	GtkWidget *hbox;
-	GtkWidget *midi_init_entry;
+	static midi_init_item_t mii;
 	GList *items;
 	int i;
 
@@ -687,56 +689,148 @@ create_midi_note(void)
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 	gtk_widget_show(hbox);
 
-	button = gtk_check_button_new_with_label("Enable MIDI");
-	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
-	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
-	gtk_widget_show(button);
+	enable_button = gtk_check_button_new_with_label(
+	    "Enable MIDI");
+	gtk_container_set_border_width(GTK_CONTAINER(enable_button), 5);
+	gtk_box_pack_start(GTK_BOX(hbox), enable_button, FALSE, FALSE, 0);
+	gtk_widget_show(enable_button);
 
-	combo = gtk_combo_new();
+	mii.init_combo = combo = gtk_combo_new();
 	gtk_container_set_border_width(GTK_CONTAINER(combo), 5);
 	gtk_combo_set_value_in_list(GTK_COMBO(combo), TRUE, TRUE);
 	gtk_combo_set_use_arrows_always(GTK_COMBO(combo), TRUE);
-	for (items = 0, i = 0; i < NELEMENTS(midi_init); ++i)
-		items = g_list_append(items, (gpointer)midi_init[i]);
+	for (items = 0, i = 0; i < NELEMENTS(MIDI_TYPE_NAME); ++i)
+		items = g_list_append(items, (gpointer)MIDI_TYPE_NAME[i]);
 	gtk_combo_set_popdown_strings(GTK_COMBO(combo), items);
 	g_list_free(items);
 	gtk_box_pack_end(GTK_BOX(hbox), combo, FALSE, FALSE, 0);
 	gtk_widget_show(combo);
 
-	label = gtk_label_new("- MIDI initialized method: ");
+	entry = GTK_COMBO(combo)->entry;
+	gtk_entry_set_editable(GTK_ENTRY(entry), FALSE);
+	gtk_signal_connect(GTK_OBJECT(entry), "changed",
+		    GTK_SIGNAL_FUNC(midi_init_entry_changed), 0);
+	gtk_widget_show(entry);
+
+	mii.init_label = label = gtk_label_new(
+	    "- MIDI initialized method:");
 	gtk_box_pack_end(GTK_BOX(hbox), label, TRUE, TRUE, 0);
 	gtk_widget_show(label);
 
-	midi_init_entry = GTK_COMBO(combo)->entry;
-	gtk_entry_set_editable(GTK_ENTRY(midi_init_entry), FALSE);
-	gtk_widget_show(midi_init_entry);
-
-	button = gtk_check_button_new_with_label(
+	mii.reset_button = button = gtk_check_button_new_with_label(
 	    "Send initialize command when X68k is reseted");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(midi_send_reset_button_clicked), 0);
 	gtk_widget_show(button);
+	if (Config.MIDI_Reset)
+		gtk_signal_emit_by_name(GTK_OBJECT(button), "clicked");
 
-	button = gtk_check_button_new_with_label("Use MIMPI tone map");
-	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
-	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
-	gtk_widget_show(button);
+	mii.mimpi_button = mimpi_button = gtk_check_button_new_with_label(
+	    "Use MIMPI tone map");
+	gtk_container_set_border_width(GTK_CONTAINER(mimpi_button), 5);
+	gtk_box_pack_start(GTK_BOX(vbox), mimpi_button, FALSE, FALSE, 0);
+	gtk_widget_show(mimpi_button);
 
 	hbox = gtk_hbox_new(FALSE, 5);
 	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
 	gtk_widget_show(hbox);
 
-	entry = gtk_entry_new();
+	mii.mimpi_entry = entry = gtk_entry_new();
 	gtk_entry_set_max_length(GTK_ENTRY(entry), MAX_PATH - 1);
 	gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 10);
 	gtk_widget_show(entry);
 
-	button = gtk_button_new_with_label("Browse...");
+	mii.mimpi_browse_button = button = gtk_button_new_with_label(
+	    "Browse...");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
 	gtk_widget_show(button);
 
+
+	/* MIMPI ToneMap */
+	gtk_signal_connect(GTK_OBJECT(mimpi_button), "clicked",
+		    GTK_SIGNAL_FUNC(midi_mimpi_button_clicked),
+		    (gpointer)&mii);
+	if (!Config.ToneMap)
+		gtk_signal_emit_by_name(GTK_OBJECT(mimpi_button), "clicked");
+	gtk_signal_emit_by_name(GTK_OBJECT(mimpi_button), "clicked");
+
+	/* Enable MIDI */
+	gtk_signal_connect(GTK_OBJECT(enable_button), "clicked",
+		    GTK_SIGNAL_FUNC(midi_enable_button_clicked),
+		    (gpointer)&mii);
+	if (!Config.MIDI_SW)
+		gtk_signal_emit_by_name(GTK_OBJECT(enable_button), "clicked");
+	gtk_signal_emit_by_name(GTK_OBJECT(enable_button), "clicked");
+
 	return vbox;
+}
+
+static void
+midi_enable_button_clicked(GtkButton *b, gpointer d)
+{
+	midi_init_item_t *mii = (midi_init_item_t *)d;
+
+	ConfigProp.MIDI_SW = GTK_TOGGLE_BUTTON(b)->active;
+
+	if (ConfigProp.MIDI_SW) {
+		gtk_widget_set_sensitive(mii->init_combo, TRUE);
+		gtk_widget_set_sensitive(mii->init_label, TRUE);
+		gtk_widget_set_sensitive(mii->reset_button, TRUE);
+		gtk_widget_set_sensitive(mii->mimpi_button, TRUE);
+		if (ConfigProp.ToneMap) {
+			gtk_widget_set_sensitive(mii->mimpi_entry, TRUE);
+			gtk_widget_set_sensitive(mii->mimpi_browse_button,TRUE);
+		}
+	} else {
+		gtk_widget_set_sensitive(mii->init_combo, FALSE);
+		gtk_widget_set_sensitive(mii->init_label, FALSE);
+		gtk_widget_set_sensitive(mii->reset_button, FALSE);
+		gtk_widget_set_sensitive(mii->mimpi_button, FALSE);
+		gtk_widget_set_sensitive(mii->mimpi_entry, FALSE);
+		gtk_widget_set_sensitive(mii->mimpi_browse_button, FALSE);
+	}
+}
+
+static void
+midi_send_reset_button_clicked(GtkButton *b, gpointer d)
+{
+
+	UNUSED(d);
+
+	ConfigProp.MIDI_Reset = GTK_TOGGLE_BUTTON(b)->active;
+}
+
+static void
+midi_mimpi_button_clicked(GtkButton *b, gpointer d)
+{
+	midi_init_item_t *mii = (midi_init_item_t *)d;
+
+	ConfigProp.ToneMap = GTK_TOGGLE_BUTTON(b)->active;
+	if (ConfigProp.ToneMap) {
+		gtk_widget_set_sensitive(mii->mimpi_entry, TRUE);
+		gtk_widget_set_sensitive(mii->mimpi_browse_button, TRUE);
+	} else {
+		gtk_widget_set_sensitive(mii->mimpi_entry, FALSE);
+		gtk_widget_set_sensitive(mii->mimpi_browse_button, FALSE);
+	}
+}
+
+static void
+midi_init_entry_changed(GtkEditable *e, gpointer d)
+{
+	int i;
+
+	gchar *str = gtk_editable_get_chars(GTK_EDITABLE(e), 0, -1);
+	for (i = 0; i < NELEMENTS(MIDI_TYPE_NAME); ++i) {
+		if (strcmp(MIDI_TYPE_NAME[i], str) == 0) {
+			ConfigProp.MIDI_Type = i;
+			break;
+		}
+	}
+	g_free(str);
 }
 
 /*

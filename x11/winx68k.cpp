@@ -89,14 +89,6 @@ static int ClkUsed = 0;
 static int FrameSkipCount = 0;
 static int FrameSkipQueue = 0;
 
-BYTE BIOSFILE[] = "iplrom.dat";
-BYTE BIOSF030[] = "iplrom30.dat";
-BYTE BIOSFCPT[] = "iplromco.dat";
-BYTE BIOSFXVI[] = "iplromxv.dat";
-
-BYTE FONTFILE[] = "cgrom.dat";
-BYTE FONTFILETMP[] = "cgrom.tmp";
-
 GtkWidget *window;
 GtkWidget *main_vbox;
 GtkWidget *menubar;
@@ -111,10 +103,6 @@ typedef void sigfunc(int);
 static sigfunc *setup_signal(int, sigfunc *);
 static void sighandler(int);
 static gint idle_process(gpointer *);
-static gint idle_process_splash(gpointer *);
-void install_idle_process(void);
-void install_idle_process_splash(void);
-void uninstall_idle_process(void);
 
 #ifdef __cplusplus
 };
@@ -123,40 +111,64 @@ void uninstall_idle_process(void);
 void
 WinX68k_SCSICheck(void)
 {
-#if 0
-	int i, scsi=0;
+	static const BYTE SCSIIMG[] = {
+		0x00, 0xfc, 0x00, 0x14,			// $fc0000 SCSI起動用のエントリアドレス
+		0x00, 0xfc, 0x00, 0x16,			// $fc0004 IOCSベクタ設定のエントリアドレス(必ず"Human"の8バイト前)
+		0x00, 0x00, 0x00, 0x00,			// $fc0008 ?
+		0x48, 0x75, 0x6d, 0x61,			// $fc000c ↓
+		0x6e, 0x36, 0x38, 0x6b,			// $fc0010 ID "Human68k"	(必ず起動エントリポイントの直前)
+		0x4e, 0x75,				// $fc0014 "rts"		(起動エントリポイント)
+		0x23, 0xfc, 0x00, 0xfc, 0x00, 0x2a,	// $fc0016 ↓		(IOCSベクタ設定エントリポイント)
+		0x00, 0x00, 0x07, 0xd4,			// $fc001c "move.l #$fc002a, $7d4.l"
+		0x74, 0xff,				// $fc0020 "moveq #-1, d2"
+		0x4e, 0x75,				// $fc0022 "rts"
+//		0x53, 0x43, 0x53, 0x49, 0x49, 0x4e,	// $fc0024 ID "SCSIIN"
+// 内蔵SCSIをONにすると、SASIは自動的にOFFになっちゃうらしい…
+// よって、IDはマッチしないようにしておく…
+		0x44, 0x55, 0x4d, 0x4d, 0x59, 0x20,	// $fc0024 ID "DUMMY "
+		0x70, 0xff,				// $fc002a "moveq #-1, d0"	(SCSI IOCSコールエントリポイント)
+		0x4e, 0x75,				// $fc002c "rts"
+	};
+
 	DWORD *p;
-	for (i=0x30600; i<0x30c00; i+=2)
-	{
-		p = (DWORD*)(&IPL[i]);
-		if (*p == 0x0000fc00) scsi=1;
+	int scsi;
+	int i;
+
+	scsi = 0;
+	for (i = 0x30600; i < 0x30c00; i += 2) {
+		p = (DWORD *)(&IPL[i]);
+		if (*p == 0x0000fc00)
+			scsi = 1;
 	}
-	if (scsi)		// SCSIモデルのとき
-	{
+
+	// SCSIモデルのとき
+	if (scsi) {
 		ZeroMemory(IPL, 0x2000);		// 本体は8kb
 		memset(&IPL[0x2000], 0xff, 0x1e000);	// 残りは0xff
 		memcpy(IPL, SCSIIMG, sizeof(SCSIIMG));	// インチキSCSI BIOS
 //		Memory_SetSCSIMode();
-	}
-	else			// SASIモデルはIPLがそのまま見える
-#endif
+	} else {
+		// SASIモデルはIPLがそのまま見える
 		memcpy(IPL, &IPL[0x20000], 0x20000);
+	}
 }
 
 int
 WinX68k_LoadROMs(void)
 {
-	FILEH fp = NULL;
+	static const char *BIOSFILE[] = {
+		"iplrom.dat", "iplrom30.dat", "iplromco.dat", "iplromxv.dat"
+	};
+	static const char FONTFILE[] = "cgrom.dat";
+	static const char FONTFILETMP[] = "cgrom.tmp";
+	FILEH fp;
 	int i;
 	BYTE tmp;
 
-	if (!fp) fp = File_OpenCurDir((char *)BIOSFILE);
-	if (!fp) fp = File_OpenCurDir((char *)BIOSFXVI);
-	if (!fp) fp = File_OpenCurDir((char *)BIOSFCPT);
-	if (!fp) fp = File_OpenCurDir((char *)BIOSF030);
-
-	if (!fp)
-	{
+	for (fp = 0, i = 0; fp == 0 && i < NELEMENTS(BIOSFILE); ++i) {
+		fp = File_OpenCurDir((char *)BIOSFILE[i]);
+	}
+	if (fp == 0) {
 		Error("BIOS ROM イメージが見つかりません.");
 		return FALSE;
 	}
@@ -166,19 +178,19 @@ WinX68k_LoadROMs(void)
 
 	WinX68k_SCSICheck();	// SCSI IPLなら、$fc0000〜にSCSI BIOSを置く
 
-	for (i=0; i<0x40000; i+=2)
-	{
+	for (i = 0; i < 0x40000; i += 2) {
 		tmp = IPL[i];
-		IPL[i] = IPL[i+1];
-		IPL[i+1] = tmp;
+		IPL[i] = IPL[i + 1];
+		IPL[i + 1] = tmp;
 	}
 
 	fp = File_OpenCurDir((char *)FONTFILE);
-	if (!fp)
-	{
-		fp = File_OpenCurDir((char *)FONTFILETMP);		// cgrom.tmpがある？
-		if (!fp) {
+	if (fp == 0) {
+		// cgrom.tmpがある？
+		fp = File_OpenCurDir((char *)FONTFILETMP);
+		if (fp == 0) {
 #if 1
+			// フォント生成 XXX
 			printf("フォントROMイメージが見つかりません\n");
 			return FALSE;
 #else
@@ -538,63 +550,38 @@ set_icon_bitmap(GtkWidget *w)
 // IDLE process
 //
 static gint
-idle_process(gpointer *p)
-{
-	UNUSED(p);
-
-	//OPM_RomeoOut(Config.BufferSize*5);
-	if (NoWaitMode || Timer_GetCount()) {
-		WinX68k_Exec();
-	}
-
-	return TRUE;
-}
-
-static gint
 idle_process_splash(gpointer *p)
 {
+
 	UNUSED(p);
 
-	//OPM_RomeoOut(Config.BufferSize*5);
+	// OPM_RomeoOut(Config.BufferSize * 5);
 	if (NoWaitMode || Timer_GetCount()) {
 		WinX68k_Exec();
 		if (SplashFlag) {
 			SplashFlag--;
-			if (SplashFlag == 0) {
+			if (SplashFlag == 0)
 				WinDraw_HideSplash();
-				uninstall_idle_process();
-				install_idle_process();
-			}
 		}
 	}
-
 	return TRUE;
 }
 
 static int idle_id;
 
 void
-install_idle_process_splash(void)
-{
-
-	idle_id = gtk_idle_add((GtkFunction)idle_process_splash, NULL);
-	//audio_play();
-}
-
-void
 install_idle_process(void)
 {
 
-	idle_id = gtk_idle_add((GtkFunction)idle_process, NULL);
-	//audio_play();
+	idle_id = gtk_idle_add((GtkFunction)idle_process_splash, NULL);
 }
 
 void
 uninstall_idle_process(void)
 {
 
-	//audio_stop();
 	gtk_idle_remove(idle_id);
+	idle_id = 0;
 }
 
 
@@ -724,7 +711,7 @@ main(int argc, char *argv[])
 	setup_signal(SIGTERM, sighandler);
 
 	/* メインループ */
-	install_idle_process_splash();
+	install_idle_process();
 	gtk_main();
 	uninstall_idle_process();
 
