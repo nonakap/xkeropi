@@ -1,4 +1,4 @@
-/*	$Id: winui.c,v 1.3 2003/12/05 18:07:17 nonaka Exp $	*/
+/*	$Id: winui.c,v 1.4 2007/02/06 15:12:06 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -876,7 +876,7 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 				case 0:
 					drive = (int)(long)fsp->arg;
 					FDD_EjectFD(drive);
-					strlcpy(filepath, p, MAX_PATH);
+					strncpy(filepath, p, MAX_PATH);
 					if ((st.st_mode & S_IWUSR) == 0)
 						ro = 1;
 					FDD_SetFD(drive, p, ro);
@@ -929,7 +929,7 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 					if (is_opened) {
 						drive = (int)(long)fsp->arg;
 						FDD_EjectFD(drive);
-						strlcpy(filepath, p, MAX_PATH);
+						strncpy(filepath, p, MAX_PATH);
 						if ((st.st_mode & S_IWUSR) == 0)
 							ro = 1;
 						FDD_SetFD(drive, p, ro);

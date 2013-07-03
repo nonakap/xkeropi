@@ -17,7 +17,7 @@
 
 ;	haveunit.hとの整合性注意
 
-%include "nasm.h"
+%include "x11/nasm.h"
 
 tFPU	equ	(1<<0)
 tMMX	equ	(1<<1)

@@ -37,12 +37,12 @@ static signed short ADPCM_BufL[ADPCM_BufSize];
 static long ADPCM_WrPtr = 0;
 static long ADPCM_RdPtr = 0;
 static DWORD ADPCM_SampleRate = 44100*12;
-static DWORD ADPCM_ClockRate = 7800*12;
+       DWORD ADPCM_ClockRate = 7800*12;
 static DWORD ADPCM_Count = 0;
 static int ADPCM_Step = 0;
 static int ADPCM_Out = 0;
 static BYTE ADPCM_Playing = 0;
-static BYTE ADPCM_Clock = 0;
+       BYTE ADPCM_Clock = 0;
 static int ADPCM_PreCounter = 0;
 static int ADPCM_DifBuf = 0;
 

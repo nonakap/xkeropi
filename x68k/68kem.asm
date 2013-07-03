@@ -56425,7 +56425,7 @@ exception_cycles
 
 COMPTABLE
 
-%include 'comptab.asm'
+%include 'x68k/comptab.asm'
 
 		DW   0,0,0
 
