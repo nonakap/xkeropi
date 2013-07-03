@@ -72,9 +72,9 @@ int D88_SetFD(int drv, char* filename)
 	}
 
 	for (trk=0; trk<164; trk++) {
-		int ptr = D88Head[drv].trackp[trk];
-		D88_SECTINFO *si, *oldsi;
-		if ( (ptr>=sizeof(D88_HEADER))&&(ptr<D88Head[drv].fd_size) ) {
+		long ptr = D88Head[drv].trackp[trk];
+		D88_SECTINFO *si, *oldsi = NULL;
+		if ( (ptr>=(long)sizeof(D88_HEADER))&&(ptr<D88Head[drv].fd_size) ) {
 			d88s.sectors = 65535;
 			File_Seek(fp, ptr, FSEEK_SET);
 			for (sct=0; sct<d88s.sectors; sct++) {
@@ -89,7 +89,7 @@ int D88_SetFD(int drv, char* filename)
 				memcpy(&si->sect, &d88s, sizeof(D88_SECTOR));
 				if ( File_Read(fp, ((unsigned char*)si)+sizeof(D88_SECTINFO), d88s.size)!=d88s.size ) goto d88_set_error;
 				si->next = 0;
-				oldsi = si;
+				if (oldsi) oldsi = si;
 			}
 		}
 	}
@@ -220,10 +220,10 @@ int D88_WriteID(int drv, int trk, unsigned char* buf, int num)
 	}
 	for (i=0; i<num; i++, buf+=4) {
 		int size = 128<<buf[3];
-		D88_SECTINFO *si = (D88_SECTINFO*)malloc(sizeof(D88_SECTINFO)+size), *oldsi;
+		D88_SECTINFO *si = (D88_SECTINFO*)malloc(sizeof(D88_SECTINFO)+size), *oldsi = NULL;
 		if ( !si ) goto d88_writeid_error;
 		if ( i ) {
-			oldsi->next = si;
+			if (oldsi) oldsi->next = si;
 		} else {
 			D88Trks[drv][trk] = si;
 		}

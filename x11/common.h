@@ -13,6 +13,7 @@
 #define FASTCALL
 #define STDCALL
 #define	LABEL
+#define	__stdcall
 
 typedef unsigned char	UINT8;
 typedef unsigned short	UINT16;

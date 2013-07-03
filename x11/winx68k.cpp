@@ -1,4 +1,4 @@
-/*	$Id: winx68k.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+/*	$Id: winx68k.cpp,v 1.2 2003/12/05 18:07:17 nonaka Exp $	*/
 
 #ifdef  __cplusplus
 extern "C" {
@@ -102,7 +102,6 @@ static void set_icon_bitmap(GtkWidget *);
 typedef void sigfunc(int);
 static sigfunc *setup_signal(int, sigfunc *);
 static void sighandler(int);
-static gint idle_process(gpointer *);
 
 #ifdef __cplusplus
 };

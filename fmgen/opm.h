@@ -1,15 +1,14 @@
 // ---------------------------------------------------------------------------
 //	OPM-like Sound Generator
-//	Copyright (C) cisc 1998, 2001.
+//	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
-//	$Id: opm.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
+//	$fmgen-Id: opm.h,v 1.14 2003/06/07 08:25:53 cisc Exp $
 
 #ifndef FM_OPM_H
 #define FM_OPM_H
 
 #include "fmgen.h"
 #include "fmtimer.h"
-#include "fmfilter.h"
 #include "psg.h"
 
 // ---------------------------------------------------------------------------
@@ -17,21 +16,18 @@
 //	OPM に良く似た(?)音を生成する音源ユニット
 //	
 //	interface:
-//	bool Init(uint clock, uint rate, bool interpolation);
+//	bool Init(uint clock, uint rate, bool);
 //		初期化．このクラスを使用する前にかならず呼んでおくこと．
+//		注意: 線形補完モードは廃止されました
 //
 //		clock:	OPM のクロック周波数(Hz)
 //
 //		rate:	生成する PCM の標本周波数(Hz)
 //
-//		inter.:	線形補完モード
-//				true にすると，FM 音源の合成は音源本来のレートで行うように
-//				なる．最終的に生成される PCM は rate で指定されたレートになる
-//				よう線形補完される
 //				
 //		返値	初期化に成功すれば true
 //
-//	bool SetRate(uint clock, uint rate, bool interpolation)
+//	bool SetRate(uint clock, uint rate, bool)
 //		クロックや PCM レートを変更する
 //		引数等は Init と同様．
 //	
@@ -82,8 +78,8 @@ namespace FM
 	{
 	public:
 		OPM();
-		~OPM() {}
-		
+		virtual ~OPM() {}
+
 		bool	Init(uint c, uint r, bool=false);
 		bool	SetRate(uint c, uint r, bool);
 		void	SetLPFCutoff(uint freq);
@@ -102,6 +98,11 @@ namespace FM
 		virtual void Intr(bool) {}
 	
 	private:
+		enum
+		{
+			OPM_LFOENTS = 512,
+		};
+		
 		void	SetStatus(uint bit);
 		void	ResetStatus(uint bit);
 		void	SetParameter(uint addr, uint data);
@@ -112,22 +113,22 @@ namespace FM
 		void	LFO();
 		uint	Noise();
 		
-		int32	ml[4];
-		int32	mr[4];
-		int32	mixdelta;
-		int		mpratio;
-		
 		int		fmvolume;
 
 		uint	clock;
 		uint	rate;
 		uint	pcmrate;
-		uint	lpfcutoff;
 
 		uint	pmd;
 		uint	amd;
 		uint	lfocount;
 		uint	lfodcount;
+
+		uint	lfo_count_;
+		uint	lfo_count_diff_;
+		uint	lfo_step_;
+		uint	lfo_count_prev_;
+
 		uint	lfowaveform;
 		uint	rateratio;
 		uint	noise;
@@ -144,11 +145,16 @@ namespace FM
 		uint8	pan[8];
 
 		Channel4 ch[8];
-		LPF		lpf;
+		Chip	chip;
 
 		static void	BuildLFOTable();
-		static int amtable[4][FM_LFOENTS];
-		static int pmtable[4][FM_LFOENTS];
+		static int amtable[4][OPM_LFOENTS];
+		static int pmtable[4][OPM_LFOENTS];
+
+	public:
+		int		dbgGetOpOut(int c, int s) { return ch[c].op[s].dbgopout_; }
+		Channel4* dbgGetCh(int c) { return &ch[c]; }
+
 	};
 }
 

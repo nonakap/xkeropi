@@ -1,4 +1,4 @@
-/*	$Id: keyboard.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: keyboard.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -339,7 +339,7 @@ BYTE KeyTableMaster[512] = {
 //	WM_KEYDOWN¡Á
 // ----------------------------------
 void
-Keyboard_KeyDown(WORD wp, DWORD lp)
+Keyboard_KeyDown(DWORD wp)
 {
 	BYTE code;
 	BYTE newwp;
@@ -405,7 +405,7 @@ Keyboard_KeyDown(WORD wp, DWORD lp)
 //	WM_KEYUP
 // ----------------------------------
 void
-Keyboard_KeyUp(WORD wp, DWORD lp)
+Keyboard_KeyUp(DWORD wp)
 {
 	BYTE code;
 	BYTE newwp;

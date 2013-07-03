@@ -1,4 +1,4 @@
-/*	$Id: mem_wrap.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+/*	$Id: mem_wrap.c,v 1.2 2003/12/05 18:07:19 nonaka Exp $	*/
 
 #include "common.h"
 #include "memory.h"
@@ -553,6 +553,8 @@ Memory_IntErr(int i)
 	fp=fopen("_interr.txt", "a");
 	fprintf(fp, "IntErr - Int.No%d  @ $%08X\n", i, regs.pc);
 	fclose(fp);
+#else
+	(void)i;
 #endif
 }
 
@@ -560,6 +562,8 @@ void
 AdrError(DWORD adr, DWORD unknown)
 {
 
+	(void)adr;
+	(void)unknown;
 	assert(0);
 }
 
@@ -567,5 +571,7 @@ void
 BusError(DWORD adr, DWORD unknown)
 {
 
+	(void)adr;
+	(void)unknown;
 	assert(0);
 }

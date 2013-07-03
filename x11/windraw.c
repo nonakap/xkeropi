@@ -1,4 +1,4 @@
-/*	$Id: windraw.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+/*	$Id: windraw.c,v 1.2 2003/12/05 18:07:17 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -40,6 +40,7 @@
 #include "mouse.h"
 #include "palette.h"
 #include "prop.h"
+#include "status.h"
 #include "tvram.h"
 
 #include "../icons/keropi.xpm"
@@ -58,15 +59,15 @@ BYTE Draw_BitMask[800];
 BYTE Draw_TextBitMask[800];
 
 int winx = 0, winy = 0;
-int winh = 0, winw = 0;
-int root_width, root_height;
+DWORD winh = 0, winw = 0;
+DWORD root_width, root_height;
 WORD FrameCount = 0;
 int SplashFlag = 0;
 
 WORD WinDraw_Pal16B, WinDraw_Pal16R, WinDraw_Pal16G;
 
-int WindowX = 0;
-int WindowY = 0;
+DWORD WindowX = 0;
+DWORD WindowY = 0;
 
 GdkImage *surface;
 GdkRectangle surface_rect = { 16, 16, FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT };
@@ -113,7 +114,8 @@ void WinDraw_InitWindowSize(WORD width, WORD height)
 
 void WinDraw_ChangeSize(void)
 {
-	int oldx = WindowX, oldy = WindowY, dif;
+	DWORD oldx = WindowX, oldy = WindowY;
+	int dif;
 
 	Mouse_ChangePos();
 
@@ -217,6 +219,7 @@ void WinDraw_ChangeMode(int flag)
 {
 
 	/* full screen mode(TRUE) <-> window mode(FALSE) */
+	(void)flag;
 }
 
 void WinDraw_ShowSplash(void)
@@ -2321,8 +2324,8 @@ gcd(unsigned int v0, unsigned int v1)
 	if (v0 < v1)
 		t = v0, v0 = v1, v1 = t;
 
-	for (; d = v0 - v1; v0 = v1, v1 = d) {
-		while (!(d & 1))
+	for (; (d = v0 - v1) != 0; v0 = v1, v1 = d) {
+		while ((d & 1) == 0)
 			d >>= 1;
 		if (v1 < d)
 			t = v1, v1 = d, d = t;
@@ -2331,15 +2334,15 @@ gcd(unsigned int v0, unsigned int v1)
 #endif
 }
 
-static void expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, unsigned int ratio[4]);
+static void expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, int ratio[4]);
 
 GdkImage *
 gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRectangle *src_rect)
 {
 	GdkRectangle dr, sr;
 	GdkImage *new = dest;
-	unsigned int ratio[4];
-	unsigned int x_gcd, y_gcd;
+	int ratio[4];
+	int x_gcd, y_gcd;
 
 	g_return_val_if_fail(src, 0);
 	g_return_val_if_fail((src->visual->depth == 15 || src->visual->depth == 16), 0);
@@ -2399,7 +2402,7 @@ gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRecta
 }
 
 static void
-expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, unsigned int ratio[4])
+expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, int ratio[4])
 {
 	guint16 *dp, *sp;
 	int dest_right, dest_bottom;

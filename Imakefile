@@ -1,4 +1,4 @@
-XCOMM	$Id: Imakefile,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $
+XCOMM	$Id: Imakefile,v 1.3 2003/12/05 18:07:14 nonaka Exp $
 
 #include "config.tmpl"
 
@@ -12,9 +12,8 @@ SDL_CONFIG?=	sdl-config
 SDL_INCLUDE=	`$(SDL_CONFIG) --cflags`
 SDL_LIB=	`$(SDL_CONFIG) --libs`
 
-XCOMM nasm 0.98.35
 NASM?= nasm
-NASMFLAGS= -I./x68k -I./x11
+NASMFLAGS= -i ./x68k -i ./x11
 NASMOBJFLAGS?= -f elf
 
 #if defined(NO_SOUND)
@@ -30,14 +29,15 @@ SYS_LIBRARIES= -lm
 
 EXTRA_INCLUDES= -I./x11 -I./x68k -I./fmgen -I./win32api \
 		$(GTK_INCLUDE) $(SDL_INCLUDE)
-CXXEXTRA_INCLUDES= $(EXTRA_INCLUDES)
 
+CXXEXTRA_INCLUDES= $(EXTRA_INCLUDES)
 CXXEXTRA_DEFINES= $(EXTRA_DEFINES)
 CXXDEBUGFLAGS= $(CDEBUGFLAGS)
 
 LOCAL_LIBRARIES= $(XLIB) $(GTK_LIB) $(SDL_LIB)
 
 #define	PassCDebugFlags
+
 
 CPUOBJS= x68k/d68k.o
 CPUASMOBJS= x68k/68kem.o
@@ -53,8 +53,8 @@ X68KOBJS= \
 X68KASMOBJS= x68k/bga.o x68k/memory.o x68k/memory_glue.o
 
 FMGENOBJS= \
-	fmgen/file.o fmgen/fmg_wrap.o fmgen/fmtimer.o fmgen/opna.o \
-	fmgen/fmfilter.o fmgen/fmgen.o fmgen/opm.o fmgen/psg.o
+	fmgen/fmgen.o fmgen/fmg_wrap.o fmgen/file.o fmgen/fmtimer.o \
+	fmgen/opm.o fmgen/opna.o fmgen/psg.o
 
 X11OBJS= \
 	x11/joystick.o x11/juliet.o x11/keyboard.o x11/mouse.o x11/prop.o \
@@ -88,7 +88,7 @@ ALLSRCS=	$(CSRCS) $(CXXSRCS) $(ASRCS)
 .asm.o:
 	$(NASM) $(NASMFLAGS) $(NASMOBJFLAGS) $<
 
-ComplexProgramTarget(xkeropi)
+ComplexCplusplusProgramTarget(xkeropi)
 
 cleandir distclean::
 	-$(RM) .depend

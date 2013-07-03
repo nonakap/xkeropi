@@ -1,4 +1,4 @@
-/*	$Id: peace.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: peace.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
 
 /*
  * Copyright 2000 Masaru OKI
@@ -125,6 +125,8 @@ ReadFile(HANDLE h, PVOID buf, DWORD len, PDWORD lp, LPOVERLAPPED lpov)
 {
 	struct internal_file *fp;
 
+	(void)lpov;
+
 	if (h == (HANDLE)INVALID_HANDLE_VALUE)
 		return FALSE;
 
@@ -140,6 +142,8 @@ BOOL WINAPI
 WriteFile(HANDLE h, PCVOID buf, DWORD len, PDWORD lp, LPOVERLAPPED lpov)
 {
 	struct internal_file *fp;
+
+	(void)lpov;
 
 	if (h == (HANDLE)INVALID_HANDLE_VALUE)
 		return FALSE;
@@ -160,6 +164,11 @@ CreateFile(LPCSTR filename, DWORD rdwr, DWORD share,
 	struct internal_file *fp;
 	HANDLE h;
 	int fd, fmode = 0;
+
+	(void)share;
+	(void)sap;
+	(void)flags;
+	(void)template;
 
 	switch (rdwr & (GENERIC_READ|GENERIC_WRITE)) {
 	case GENERIC_READ:
@@ -198,6 +207,8 @@ SetFilePointer(HANDLE h, LONG pos, PLONG newposh, DWORD whence)
 	struct internal_file *fp;
 	off_t newpos;
 	int fd;
+
+	(void)newposh;
 
 	fp = LocalLock(h);
 	fd = fp->fd;
@@ -275,6 +286,8 @@ HGLOBAL WINAPI
 GlobalAlloc(UINT flags, DWORD bytes)
 {
 	struct internal_handle *p;
+
+	(void)flags;
 
 	p = malloc(bytes + sizeof(struct internal_handle));
 	if (p != 0) {

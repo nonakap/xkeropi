@@ -13,8 +13,8 @@ extern	BYTE	KeyTableMaster[512];
 extern	BYTE	KeyEnable;
 extern	BYTE	KeyIntFlag;
 
-void Keyboard_KeyDown(WORD vkcode, DWORD keystate);
-void Keyboard_KeyUp(WORD vkcode, DWORD keystate);
+void Keyboard_KeyDown(DWORD vkcode);
+void Keyboard_KeyUp(DWORD vkcode);
 void Keyboard_Int(void);
 
 #endif //_winx68k_keyboard

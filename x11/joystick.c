@@ -18,7 +18,8 @@ char joyname[2][MAX_PATH];
 char joybtnname[2][MAX_BUTTON][MAX_PATH];
 BYTE joybtnnum[2] = {0, 0};
 
-static	int		joyactive = 0;
+//static	int		joyactive = 0;
+BYTE JoyKeyState = 0;
 BYTE JoyKeyState0 = 0;
 BYTE JoyKeyState1 = 0;
 BYTE JoyState0[2] = {0xff, 0xff};
@@ -201,7 +202,9 @@ void Joystick_Cleanup(void)
 
 void Joystick_Activate(UINT wParam)
 {
-#if 0
+#if 1
+	(void)wParam;
+#else
 	if (wParam != WA_INACTIVE)
 	{
 		if (joy[0]) IDirectInputDevice2_Acquire(joy[0]);
@@ -220,7 +223,12 @@ BYTE FASTCALL Joystick_Read(BYTE num)
 {
 	BYTE joynum = num;
 	BYTE ret0 = 0xff, ret1 = 0xff, ret;
-#if 0
+#if 1
+	(void)joynum;
+	(void)ret0;
+	(void)ret1;
+	ret = 0xff;
+#else
 	if (Config.JoySwap) joynum ^= 1;
 	if (joy[num]) {
 		ret0 = JoyState0[num];

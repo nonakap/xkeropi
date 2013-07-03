@@ -1,4 +1,4 @@
-/*	$Id: dosio.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: dosio.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -73,6 +73,8 @@ FILEH
 file_create(LPSTR filename, int ftype)
 {
 	FILEH	ret;
+
+	(void)ftype;
 
 	ret = CreateFile(filename, GENERIC_READ | GENERIC_WRITE,
 	    0, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
@@ -245,6 +247,8 @@ file_attr_c(LPSTR filename)
 int
 file_getftype(LPSTR filename)
 {
+
+	(void)filename;
 
 	return FTYPE_NONE;
 }

@@ -888,11 +888,11 @@ static int file_readline(FILEH fh, char *buf, int len) {
 		return(-1);
 	}
 	pos = File_Seek(fh, 0, FSEEK_CUR);
-	if (pos == -1) {
+	if (pos == (DWORD)-1) {
 		return(-1);
 	}
 	readsize = File_Read(fh, buf, len-1);
-	if (readsize == -1) {
+	if (readsize == (DWORD)-1) {
 		return(-1);
 	}
 	if (!readsize) {

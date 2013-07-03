@@ -1,4 +1,4 @@
-// ciscタンノエロガゾウキボンヌを強引にけろぴーに繋ぐための喇叭
+// ciscタンノエロガゾウキボンヌを強引にけろぴーに繋ぐための
 // extern "C" の入れ方がきちゃなくてステキ（ぉ
 
 // readme.txtに従って、改変点：
@@ -40,7 +40,7 @@ class MyOPM : public FM::OPM
 {
 public:
 	MyOPM();
-	~MyOPM() {}
+	virtual ~MyOPM() {}
 	void WriteIO(DWORD adr, BYTE data);
 	void Count2(DWORD clock);
 private:
@@ -151,6 +151,7 @@ void OPM_Reset(void)
 BYTE FASTCALL OPM_Read(WORD adr)
 {
 	BYTE ret = 0;
+	(void)adr;
 	if ( opm ) ret = opm->ReadStatus();
 	if ( (juliet_YM2151IsEnable())&&(Config.SoundROMEO) ) {
 		int newptr = (RMPtrW+1)%RMBUFSIZE;
@@ -209,7 +210,7 @@ class YMF288 : public FM::Y288
 {
 public:
 	YMF288();
-	~YMF288() {}
+	virtual ~YMF288() {}
 	void WriteIO(DWORD adr, BYTE data);
 	BYTE ReadIO(DWORD adr);
 	void Count2(DWORD clock);

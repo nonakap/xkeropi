@@ -96,7 +96,7 @@ dim_set_error:
 }
 
 
-int DIM_Eject(drv)
+int DIM_Eject(int drv)
 {
 	FILEH fp;
 	DIM_HEADER* dh;
@@ -213,6 +213,9 @@ static int GetPos(int drv, FDCID* id)
 			ret = SctLength[type]*(c*2+h)+((r-1)<<9);
 			ret += sizeof(DIM_HEADER);
 			break;
+		default:
+			ret = 0;
+			break;
 	}
 	return ret;
 }
@@ -294,6 +297,10 @@ int DIM_WriteID(int drv, int trk, unsigned char* buf, int num)
 	DIMTrk[drv] = trk;
 	return TRUE;
 #else
+	(void)drv;
+	(void)trk;
+	(void)buf;
+	(void)num;
 	return FALSE;
 #endif
 }
@@ -317,6 +324,7 @@ int DIM_Read(int drv, FDCID* id, unsigned char* buf)
 int DIM_ReadDiag(int drv, FDCID* id, FDCID* retid, unsigned char* buf)
 {
 	int pos;
+	(void)id;
 	if ( (drv<0)||(drv>3) ) return FALSE;
 	if ( !DIMImg[drv] ) return FALSE;
 	if ( !CheckTrack(drv, DIMTrk[drv]) ) return FALSE;
@@ -332,6 +340,7 @@ int DIM_ReadDiag(int drv, FDCID* id, FDCID* retid, unsigned char* buf)
 int DIM_Write(int drv, FDCID* id, unsigned char* buf, int del)
 {
 	int pos;
+	(void)del;
 	if ( (drv<0)||(drv>3) ) return FALSE;
 	if ( !DIMImg[drv] ) return FALSE;
 	if ( (((id->c<<1)+(id->h&1))!=DIMTrk[drv]) ) return FALSE;

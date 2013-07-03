@@ -1,4 +1,4 @@
-/*	$Id: prop.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: prop.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -72,6 +72,7 @@ extern BYTE FrameRate;
 
 #define CFGLEN MAX_PATH
 
+#if 0
 static long solveHEX(char *str) {
 
 	long	ret;
@@ -98,6 +99,7 @@ static long solveHEX(char *str) {
 	}
 	return(ret);
 }
+#endif
 
 static char *makeBOOL(BYTE value) {
 
@@ -518,6 +520,8 @@ static void
 config_ok_button_clicked(GtkButton *b, gpointer d)
 {
 
+	(void)b;
+
 	Config = ConfigProp;
 	gtk_widget_destroy(GTK_WIDGET(d));
 }
@@ -525,6 +529,9 @@ config_ok_button_clicked(GtkButton *b, gpointer d)
 static void
 config_accept_button_clicked(GtkButton *b, gpointer d)
 {
+
+	(void)b;
+	(void)d;
 
 	Config = ConfigProp;
 }
@@ -554,7 +561,7 @@ static const struct {
 	gfloat max;
 	size_t offset;
 } sound_right_frame[] = {
-	{ "Buffer size",    50.0, 10.0, 200.0, offsetof(Win68Conf,BufferSize) },
+	{ "Buffer size",   500.0, 20.0,1000.0, offsetof(Win68Conf,BufferSize) },
 	{ "ADPCM volume",   15.0,  0.0,  16.0, offsetof(Win68Conf,PCM_VOL)    },
 	{ "OPM volume",     12.0,  0.0,  16.0, offsetof(Win68Conf,OPM_VOL)    },
 	{ "Mercury volume", 13.0,  0.0,  16.0, offsetof(Win68Conf,MCR_VOL)    },

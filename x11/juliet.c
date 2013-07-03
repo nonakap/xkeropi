@@ -1,8 +1,9 @@
-/*	$Id: juliet.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+/*	$Id: juliet.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 #include	"common.h"
 #include	"juliet.h"
 
+#if 0
 /*
  * Juliet ¥À¥ß¡¼
  */
@@ -96,3 +97,5 @@ juliet_YMF288R(BYTE addr)
 
 	return 0xff;
 }
+
+#endif

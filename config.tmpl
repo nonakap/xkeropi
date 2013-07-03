@@ -1,4 +1,4 @@
-XCOMM	$Id: config.tmpl,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $
+XCOMM	$Id: config.tmpl,v 1.2 2003/12/05 18:07:14 nonaka Exp $
 
 XCOMM
 XCOMM disable sound
@@ -13,10 +13,12 @@ XCOMM
 XCOMM
 XCOMM for Opt.
 XCOMM
-XCOMM CDEBUGFLAGS= -O3 -march=i686 -mcpu=pentiumpro
-XCOMM CDEBUGFLAGS+= -funroll-loops -ffast-math
+XCOMM CDEBUGFLAGS= -O3
+XCOMM CDEBUGFLAGS+= -funroll-loops
 XCOMM CDEBUGFLAGS+= -fomit-frame-pointer
-XCOMM for gcc 3
+XCOMM CDEBUGFLAGS+= -ffast-math
+
+XCOMM CDEBUGFLAGS= -mcpu=pentiumpro
 XCOMM CDEBUGFLAGS+= -msse -mfpmath=sse
 
 XCOMM
@@ -25,4 +27,6 @@ XCOMM
 XCOMM CDEBUGFLAGS+= -g
 XCOMM CDEBUGFLAGS+= -W -Wall -Wuninitialized
 XCOMM CDEBUGFLAGS+= -Wunused
+XCOMM CDEBUGFLAGS+= -Werror
 XCOMM CDEBUGFLAGS+= -DINLINE=
+XCOMM CDEBUGFLAGS+= -DUSE_GAS

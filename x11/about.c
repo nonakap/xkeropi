@@ -1,4 +1,4 @@
-/*	$Id: about.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: about.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -41,16 +41,6 @@
 #include "../icons/motorola.xpm"
 #include "../icons/nekolgc.xpm"
 #include "../icons/opm.xpm"
-
-static void
-delete_event(GtkWidget *w, GdkEvent *ev, gpointer data)
-{
-
-	UNUSED(w);
-	UNUSED(ev);
-	UNUSED(data);
-	gtk_main_quit();
-}
 
 static void
 dialog_destroy(GtkWidget *w, GtkWidget **wp)

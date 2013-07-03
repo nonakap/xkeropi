@@ -1,4 +1,4 @@
-/*	$Id: fake.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: fake.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -49,6 +49,9 @@ int WINAPI
 MessageBox(HWND hWnd, LPCSTR str, LPCSTR title, UINT flags)
 {
 
+	(void)hWnd;
+	(void)flags;
+
 	printf("----- %s\n", title);
 	printf("%s\n", str);
 	printf("-----\n\n");
@@ -74,12 +77,18 @@ BOOL WINAPI
 SetEndOfFile(HANDLE hFile)
 {
 
+	(void)hFile;
+
+	return FALSE;
 }
 
 WINMMAPI MMRESULT WINAPI
 midiOutPrepareHeader(HMIDIOUT hmo, LPMIDIHDR pmh, UINT cbmh)
 {
 
+	(void)hmo;
+	(void)pmh;
+	(void)cbmh;
 	return !MIDIERR_STILLPLAYING;	// (¤©
 }
 
@@ -87,6 +96,9 @@ WINMMAPI MMRESULT WINAPI
 midiOutUnprepareHeader(HMIDIOUT hmo, LPMIDIHDR pmh, UINT cbmh)
 {
 
+	(void)hmo;
+	(void)pmh;
+	(void)cbmh;
 	return MMSYSERR_NOERROR;
 }
 
@@ -94,6 +106,8 @@ WINMMAPI MMRESULT WINAPI
 midiOutShortMsg(HMIDIOUT hmo, DWORD dwMsg)
 {
 
+	(void)hmo;
+	(void)dwMsg;
 	return MMSYSERR_NOERROR;
 }
 
@@ -101,6 +115,9 @@ WINMMAPI MMRESULT WINAPI
 midiOutLongMsg(HMIDIOUT hmo, LPMIDIHDR pmh, UINT cbmh)
 {
 
+	(void)hmo;
+	(void)pmh;
+	(void)cbmh;
 	return MMSYSERR_NOERROR;
 }
 
@@ -109,6 +126,11 @@ midiOutOpen(LPHMIDIOUT phmo, UINT uDeviceID, DWORD dwCallback,
     DWORD dwInstance, DWORD fdwOpen)
 {
 
+	(void)phmo;
+	(void)uDeviceID;
+	(void)dwCallback;
+	(void)dwInstance;
+	(void)fdwOpen;
 	return !MMSYSERR_NOERROR;	// (¤£
 }
 
@@ -116,6 +138,7 @@ WINMMAPI MMRESULT WINAPI
 midiOutClose(HMIDIOUT hmo)
 {
 
+	(void)hmo;
 	return MMSYSERR_NOERROR;
 }
 
@@ -123,6 +146,7 @@ WINMMAPI MMRESULT WINAPI
 midiOutReset(HMIDIOUT hmo)
 {
 
+	(void)hmo;
 	return MMSYSERR_NOERROR;
 }
 
@@ -140,7 +164,6 @@ WritePrivateProfileString(LPCSTR sect, LPCSTR key, LPCSTR str, LPCSTR inifile)
 	int found = 0;
 	int notfound = 0;
 	int delta;
-	char *p;
 
 	if (stat(inifile, &sb) == 0)
 		fp = fopen(inifile, "r+");

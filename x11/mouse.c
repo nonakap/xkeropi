@@ -1,4 +1,4 @@
-/*	$Id: mouse.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: mouse.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -165,7 +165,6 @@ void Mouse_SetData(void)
 void Mouse_StartCapture(int flag)
 {
 	GtkWidget *w = window;
-	RECT rect;
 	POINT pt;
 
 	if (flag && !MouseSW) {

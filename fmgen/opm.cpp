@@ -1,8 +1,8 @@
 // ---------------------------------------------------------------------------
 //	OPM interface
-//	Copyright (C) cisc 1998, 2001.
+//	Copyright (C) cisc 1998, 2003.
 // ---------------------------------------------------------------------------
-//	$Id: opm.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
+//	$fmgen-Id: opm.cpp,v 1.26 2003/08/25 13:53:08 cisc Exp $
 
 #include "headers.h"
 #include "misc.h"
@@ -10,24 +10,24 @@
 #include "fmgeninl.h"
 
 //#define LOGNAME "opm"
-#include "diag.h"
 
 namespace FM
 {
 
-int OPM::amtable[4][FM_LFOENTS] = { -1, };
-int OPM::pmtable[4][FM_LFOENTS];
+int OPM::amtable[4][OPM_LFOENTS] = { -1, };
+int OPM::pmtable[4][OPM_LFOENTS];
 
 // ---------------------------------------------------------------------------
 //	構築
 //
 OPM::OPM()
 {
-	MakeTable();
+	lfo_count_ = 0;
+	lfo_count_prev_ = ~0;
 	BuildLFOTable();
-	lpfcutoff = 12000;
 	for (int i=0; i<8; i++)
 	{
+		ch[i].SetChip(&chip);
 		ch[i].SetType(typeM);
 	}
 }
@@ -50,22 +50,14 @@ bool OPM::Init(uint c, uint rf, bool ip)
 // ---------------------------------------------------------------------------
 //	再設定
 //
-bool OPM::SetRate(uint c, uint r, bool ip)
+bool OPM::SetRate(uint c, uint r, bool)
 {
-	interpolation = ip;
-	
 	clock = c;
 	pcmrate = r;
 	rate = r;
 
 	RebuildTimeTable();
 	
-	ml[0] = ml[1] = ml[2] = ml[3] = 0;
-	mr[0] = mr[1] = mr[2] = mr[3] = 0;
-	mixdelta = 0;
-
-	lpf.MakeFilter(lpfcutoff, rate);
-
 	return true;
 }
 
@@ -103,24 +95,18 @@ void OPM::RebuildTimeTable()
 {
 	uint fmclock = clock / 64;
 
-	if (interpolation)
-	{
-		rate = fmclock * 2;
-		do
-		{
-			rate >>= 1;
-			mpratio = rate * FM_IPSCALE / pcmrate;
-		} while (mpratio >= 32768);
-	}
-
 	assert(fmclock < (0x80000000 >> FM_RATIOBITS));
 	rateratio = ((fmclock << FM_RATIOBITS) + rate/2) / rate;
 	SetTimerBase(fmclock);
 	
-	FM::MakeTimeTable(rateratio);
+//	FM::MakeTimeTable(rateratio);
+	chip.SetRatio(rateratio);
 
-	lfodcount = (16 + (lfofreq & 15)) << (lfofreq >> 4);
-	lfodcount = lfodcount * rateratio >> FM_RATIOBITS;
+//	lfo_diff_ = 
+
+
+//	lfodcount = (16 + (lfofreq & 15)) << (lfofreq >> 4);
+//	lfodcount = lfodcount * rateratio >> FM_RATIOBITS;
 }
 
 // ---------------------------------------------------------------------------
@@ -188,7 +174,10 @@ void OPM::SetReg(uint addr, uint data)
 	{
 	case 0x01:					// TEST (lfo restart)
 		if (data & 2)
-			lfocount = 0; 
+		{
+			lfo_count_ = 0; 
+			lfo_count_prev_ = ~0;
+		}
 		reg01 = data;
 		break;
 		
@@ -219,8 +208,13 @@ void OPM::SetReg(uint addr, uint data)
 	
 	case 0x18:					// LFRQ(lfo freq)
 		lfofreq = data;
-		lfodcount = (16 + (lfofreq & 15)) << (lfofreq >> 4);
-		lfodcount = lfodcount * rateratio >> FM_RATIOBITS;
+
+		assert(16-4-FM_RATIOBITS >= 0);
+		lfo_count_diff_ = 
+			rateratio 
+			* ((16 + (lfofreq & 15)) << (16 - 4 - FM_RATIOBITS)) 
+			/ (1 << (15 - (lfofreq >> 4)));
+		
 		break;
 		
 	case 0x19:					// PMD/AMD
@@ -260,15 +254,8 @@ void OPM::SetReg(uint addr, uint data)
 		break;
 	
 	case 0x0f:			// NE/NFRQ (noise)
-		if (data & 0x80)
-		{
-			int a = 1+(data & 31);
-			noisedelta = (a * rateratio) << (16 - FM_RATIOBITS);
-		}
-		else
-		{
-			noisedelta = 0;
-		}
+		noisedelta = data;
+		noisecount = 0;
 		break;
 		
 	default:
@@ -276,7 +263,6 @@ void OPM::SetReg(uint addr, uint data)
 			OPM::SetParameter(addr, data);
 		break;
 	}
-	LOG0("\n");
 }
 
 
@@ -285,12 +271,12 @@ void OPM::SetReg(uint addr, uint data)
 //
 void OPM::SetParameter(uint addr, uint data)
 {
-	const static uint8 sltable[16] = 
+	static const uint8 sltable[16] = 
 	{
 		  0,   4,   8,  12,  16,  20,  24,  28,
 		 32,  36,  40,  44,  48,  52,  56, 124,
 	};
-	const static uint8 slottable[4] = { 0, 2, 1, 3 };
+	static const uint8 slottable[4] = { 0, 2, 1, 3 };
 
 	uint slot = slottable[(addr >> 3) & 3];
 	Operator* op = &ch[addr & 7].op[slot];
@@ -338,38 +324,45 @@ void OPM::BuildLFOTable()
 
 	for (int type=0; type<4; type++)
 	{
-		for (int c=0; c<FM_LFOENTS; c++)
+		int r = 0;
+		for (int c=0; c<OPM_LFOENTS; c++)
 		{
 			int a, p;
 			
 			switch (type)
 			{
 			case 0:
-				p = c-0x80;
-				a = c;
+				p = (((c + 0x100) & 0x1ff) / 2) - 0x80;
+				a = 0xff - c / 2;
 				break;
 
 			case 1:
-				a = c < 0x80 ? 0xff : 0;
-				p = a - 0x80;
+				a = c < 0x100 ? 0xff : 0;
+				p = c < 0x100 ? 0x7f : -0x80;
 				break;
 
 			case 2:
-				if (c < 0x40)		p = c * 2;
-				else if (c < 0xc0)	p = 0x7f - (c - 0x40) * 2;
-				else				p = (c - 0xc0) * 2 - 0x80;
-				
-				if (c < 0x80)		a = 0xff - c * 2;
-				else				a = (c - 0x80) * 2;
+				p = (c + 0x80) & 0x1ff;
+				p = p < 0x100 ? p - 0x80 : 0x17f - p;
+				a = c < 0x100 ? 0xff - c : c - 0x100;
 				break;
 
 			case 3:
-				a = (rand() >> 4) & 0xff;
-				p = a - 0x80;
+				if (!(c & 3))
+					r = (rand() / 17) & 0xff;
+				a = r;
+				p = r - 0x80;
+				break;
+
+			default:	// XXX
+				a = 0;
+				p = 0;
 				break;
 			}
+
 			amtable[type][c] = a;
-			pmtable[type][c] = p;
+			pmtable[type][c] = -p-1;
+//			printf("%d ", p);
 		}
 	}
 }
@@ -378,18 +371,45 @@ void OPM::BuildLFOTable()
 
 inline void OPM::LFO()
 {
-	int c = (lfocount >> 22) & 0xff;
-	lfocount += lfodcount;
-
-	Operator::SetPML(pmtable[lfowaveform][c] * pmd / 128 + 0x80);
-	Operator::SetAML(amtable[lfowaveform][c] * amd / 128);
+	if (lfowaveform != 3)
+	{
+//		if ((lfo_count_ ^ lfo_count_prev_) & ~((1 << 15) - 1))
+		{
+			int c = (lfo_count_ >> 15) & 0x1fe;
+//	fprintf(stderr, "%.8x %.2x\n", lfo_count_, c);
+			chip.SetPML(pmtable[lfowaveform][c] * pmd / 128 + 0x80);
+			chip.SetAML(amtable[lfowaveform][c] * amd / 128);
+		}
+	}
+	else
+	{
+		if ((lfo_count_ ^ lfo_count_prev_) & ~((1 << 17) - 1))
+		{
+			int c = (rand() / 17) & 0xff;
+			chip.SetPML((c - 0x80) * pmd / 128 + 0x80);
+			chip.SetAML(c * amd / 128);
+		}
+	}
+	lfo_count_prev_ = lfo_count_;
+	lfo_step_++;
+	if ((lfo_step_ & 7) == 0)
+	{
+		lfo_count_ += lfo_count_diff_;
+	}
 }
 
 inline uint OPM::Noise()
 {
-	noisecount -= noisedelta;
-	for ( ; noisecount < 0; noisecount += 0x800000)
+	noisecount += 2 * rateratio;
+	if (noisecount >= (32 << FM_RATIOBITS))
 	{
+		int n = 32 - (noisedelta & 0x1f);
+		if (n == 1)
+			n = 2;
+
+		noisecount = noisecount - (n << FM_RATIOBITS);
+		if ((noisedelta & 0x1f) == 0x1f) 
+			noisecount -= FM_RATIOBITS;
 		noise = (noise >> 1) ^ (noise & 1 ? 0x8408 : 0);
 	}
 	return noise;
@@ -409,7 +429,7 @@ inline void OPM::MixSub(int activech, ISample** idest)
 	if (activech & 0x0004) (*idest[6] += ch[6].Calc());
 	if (activech & 0x0001)
 	{
-		if (noisedelta)
+		if (noisedelta & 0x80)
 			*idest[7] += ch[7].CalcN(Noise());
 		else
 			*idest[7] += ch[7].Calc();
@@ -427,7 +447,7 @@ inline void OPM::MixSubL(int activech, ISample** idest)
 	if (activech & 0x0004) (*idest[6] += ch[6].CalcL());
 	if (activech & 0x0001)
 	{
-		if (noisedelta)
+		if (noisedelta & 0x80)
 			*idest[7] += ch[7].CalcLN(Noise());
 		else
 			*idest[7] += ch[7].CalcL();
@@ -440,8 +460,8 @@ inline void OPM::MixSubL(int activech, ISample** idest)
 //
 void OPM::Mix(Sample* buffer, int nsamples)
 {
-#define IStoSample(s)	((Limit((s) >> (FM_ISHIFT+3), 0xffff, -0x10000) * fmvolume) >> 14)
-//#define IStoSample(s)	((((s) >> (FM_ISHIFT+3)) * fmvolume) >> 14)
+#define IStoSample(s)	((Limit(s, 0xffff, -0x10000) * fmvolume) >> 14)
+//#define IStoSample(s)	((s * fmvolume) >> 14)
 	
 	// odd bits - active, even bits - lfo
 	uint activech=0;
@@ -467,57 +487,17 @@ void OPM::Mix(Sample* buffer, int nsamples)
 		idest[7] = &ibuf[pan[7]];
 		
 		Sample* limit = buffer + nsamples * 2;
-		if (!interpolation)
+		for (Sample* dest = buffer; dest < limit; dest+=2)
 		{
-			for (Sample* dest = buffer; dest < limit; dest+=2)
-			{
-				ibuf[1] = ibuf[2] = ibuf[3] = 0;
-				if (activech & 0xaaaa)
-					LFO(), MixSubL(activech, idest);
-				else
-					lfocount += lfodcount, MixSub(activech, idest);
+			ibuf[1] = ibuf[2] = ibuf[3] = 0;
+			if (activech & 0xaaaa)
+				LFO(), MixSubL(activech, idest);
+			else
+				LFO(), MixSub(activech, idest);
 
-				StoreSample(dest[0], IStoSample(ibuf[1] + ibuf[3]));
-				StoreSample(dest[1], IStoSample(ibuf[2] + ibuf[3]));
-			}
+			StoreSample(dest[0], IStoSample(ibuf[1] + ibuf[3]));
+			StoreSample(dest[1], IStoSample(ibuf[2] + ibuf[3]));
 		}
-		else
-		{
-			int32 delta = mixdelta;
-			for (Sample* dest = buffer; dest < limit; dest+=2)
-			{
-				delta += mpratio;
-				while (delta > FM_IPSCALE)
-				{
-					delta -= FM_IPSCALE;
-					ibuf[1] = ibuf[2] = ibuf[3] = 0;
-					if (activech & 0xaaaa)
-						LFO(), MixSubL(activech, idest);
-					else
-						lfocount += lfodcount, MixSub(activech, idest);
-					
-					ml[0] = ml[1];
-					ml[1] = ml[2];
-					ml[2] = ml[3];
-					ml[3] = IStoSample(ibuf[1] + ibuf[3]);
-//					ml[3] = lpf.Filter(0, IStoSample(ibuf[1] + ibuf[3]));
-					mr[0] = mr[1];
-					mr[1] = mr[2];
-					mr[2] = mr[3];
-					mr[3] = IStoSample(ibuf[2] + ibuf[3]);
-//					mr[3] = lpf.Filter(1, IStoSample(ibuf[2] + ibuf[3]));
-				}
-				StoreSample(dest[0], INTERPOLATE(ml, delta));
-				StoreSample(dest[1], INTERPOLATE(mr, delta));
-				mixdelta = delta;
-			}
-		}
-	}
-	else
-	{
-		ml[0] = ml[1] = ml[2] = ml[3] = 0;
-		mr[0] = mr[1] = mr[2] = ml[3] = 0;
-		mixdelta = 0;
 	}
 #undef IStoSample
 }

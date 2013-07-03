@@ -1,4 +1,4 @@
-/*	$Id: winui.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+/*	$Id: winui.c,v 1.3 2003/12/05 18:07:17 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -177,6 +177,8 @@ static gint
 expose(GtkWidget *w, GdkEventExpose *ev)
 {
 
+	(void)w;
+
 	if (ev->type == GDK_EXPOSE) {
 		if (ev->count == 0) {
 			WinDraw_Redraw();
@@ -195,9 +197,11 @@ static gint
 key_press(GtkWidget *w, GdkEventKey *ev)
 {
 
+	(void)w;
+
 	if (ev->type == GDK_KEY_PRESS) {
 		if (ev->keyval != GDK_F12)
-			Keyboard_KeyDown(ev->keyval, 0);
+			Keyboard_KeyDown(ev->keyval);
 		return TRUE;
 	}
 	return FALSE;
@@ -211,11 +215,13 @@ static gint
 key_release(GtkWidget *w, GdkEventKey *ev)
 {
 
+	(void)w;
+
 	if (ev->type == GDK_KEY_RELEASE) {
 		if (ev->keyval == GDK_F12) {
 			xmenu_toggle_item("mouse", UI_MouseFlag ^ 1, 1);
 		} else
-			Keyboard_KeyUp(ev->keyval, 0);
+			Keyboard_KeyUp(ev->keyval);
 		return TRUE;
 	}
 	return FALSE;
@@ -228,6 +234,8 @@ key_release(GtkWidget *w, GdkEventKey *ev)
 static gint
 button_press(GtkWidget *w, GdkEventButton *ev)
 {
+
+	(void)w;
 
 	if (ev->type == GDK_BUTTON_PRESS) {
 		switch (ev->button) {
@@ -405,7 +413,7 @@ static GtkItemFactoryEntry menu_items[] = {
 { "/Debug/VideoReg Save",	NULL, f(videoreg_save), 0, NULL },
 };
 #undef	s
-#undef	_
+#undef	f
 
 typedef struct toggle_tag {
 	int cookie;
@@ -439,7 +447,7 @@ static void disable_item(char *name);
 static void select_item(char *name);
 static void xmenu_select_framerate(int kind);
 static void xmenu_select_stretch(int kind);
-static void xmenu_select_xvimode(int kind);
+//static void xmenu_select_xvimode(int kind);
 
 
 GtkWidget *
@@ -591,6 +599,7 @@ xmenu_select_stretch(int kind)
 	}
 }
 
+#if 0
 static void
 xmenu_select_xvimode(int kind)
 {
@@ -605,6 +614,7 @@ xmenu_select_xvimode(int kind)
 			select_item(name[kind]);
 	}
 }
+#endif
 
 /*
  * item function
@@ -660,7 +670,7 @@ stretch(gpointer data, guint action, GtkWidget *w)
 	UNUSED(data);
 	UNUSED(w);
 
-	if (Config.WinStrech != action)
+	if (Config.WinStrech != (int)action)
 		Config.WinStrech = action;
 }
 
@@ -670,7 +680,7 @@ xvimode(gpointer data, guint action, GtkWidget *w)
 	UNUSED(data);
 	UNUSED(w);
 
-	if (Config.XVIMode != action)
+	if (Config.XVIMode != (int)action)
 		Config.XVIMode = action;
 }
 
@@ -701,6 +711,9 @@ static void
 fdd_open(gpointer data, guint action, GtkWidget *w)
 {
 
+	(void)w;
+	(void)data;
+
 	if (action < 2)
 		file_selection(0, "Open FD image", filepath, (void *)action);
 }
@@ -708,6 +721,9 @@ fdd_open(gpointer data, guint action, GtkWidget *w)
 static void
 fdd_eject(gpointer data, guint action, GtkWidget *w)
 {
+
+	(void)w;
+	(void)data;
 
 	FDD_EjectFD(action);
 }
@@ -842,6 +858,8 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 	file_selection_t *fsp = (file_selection_t *)gfs;
 	GtkFileSelection *fs = (GtkFileSelection *)fsp->fs;
 	char *p;
+
+	(void)w;
 
 	p = (char *)gtk_file_selection_get_filename(fs);
 	if (p != NULL) {

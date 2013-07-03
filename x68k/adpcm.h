@@ -6,7 +6,6 @@ extern DWORD ADPCM_ClockRate;
 
 void FASTCALL ADPCM_PreUpdate(DWORD clock);
 void FASTCALL ADPCM_Update(signed short *buffer, DWORD length);
-INLINE void ADPCM_WriteOne(int val);
 
 void FASTCALL ADPCM_Write(DWORD adr, BYTE data);
 BYTE FASTCALL ADPCM_Read(DWORD adr);

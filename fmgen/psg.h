@@ -2,15 +2,12 @@
 //	PSG-like sound generator
 //	Copyright (C) cisc 1997, 1999.
 // ---------------------------------------------------------------------------
-//	$Id: psg.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
+//	$fmgen-Id: psg.h,v 1.8 2003/04/22 13:12:53 cisc Exp $
 
 #ifndef PSG_H
 #define PSG_H
 
-#include "fmgen_types.h"
-
-//#define PSG_SAMPLETYPE		int32		// int32 or int16
-#define PSG_SAMPLETYPE		int16		// int32 or int16
+#define PSG_SAMPLETYPE		int32		// int32 or int16
 
 // ---------------------------------------------------------------------------
 //	class PSG
@@ -49,7 +46,7 @@ public:
 	
 	enum
 	{
-		noisetablesize = 1 << 10,	// ←メモリ使用量を減らしたいなら減らして
+		noisetablesize = 1 << 11,	// ←メモリ使用量を減らしたいなら減らして
 		toneshift = 24,
 		envshift = 22,
 		noiseshift = 14,

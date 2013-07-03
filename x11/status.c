@@ -1,4 +1,4 @@
-/*	$Id: status.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+/*	$Id: status.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -30,6 +30,7 @@
  * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
+#if 0
 /* -------------------------------------------------------------------------- *
  *   FDD状態表示用ステータスバー                                              *
  * -------------------------------------------------------------------------- */
@@ -42,6 +43,7 @@
 #include "fileio.h"
 #include "fdd.h"
 
+#if 0
 #include "../icons/fd_inserted.xpm"
 #include "../icons/fd_inuse.xpm"
 #include "../icons/fd_normal.xpm"
@@ -61,12 +63,13 @@ static char **pixmaps[] = {
 	hd_inserted,
 	nulldev,
 };
+#endif
 
-static GtkWidget *statbar;
-static GtkWidget *devstat[2 /* FDD */ + 1 /* SASI */];
-static GtkWidget *devlabel[2 /* FDD */ + 1 /* SASI */];
-static GdkPixmap *devstat_pixmap[2 /* FDD */ + 1 /* SASI */];
-static GdkPixmap *dev_pixmap[NELEMENTS(pixmaps)];
+//static GtkWidget *statbar;
+//static GtkWidget *devstat[2 /* FDD */ + 1 /* SASI */];
+//static GtkWidget *devlabel[2 /* FDD */ + 1 /* SASI */];
+//static GdkPixmap *devstat_pixmap[2 /* FDD */ + 1 /* SASI */];
+//static GdkPixmap *dev_pixmap[NELEMENTS(pixmaps)];
 
 typedef struct {
 	int insert;
@@ -77,8 +80,9 @@ typedef struct {
 } FDDLED;
 
 static FDDLED FddLed[2];
-static int HddLed = 0, HddLedTmp = 0;
+//static int HddLed = 0, HddLedTmp = 0;
 
+#if 0
 /* ----- GTK signal handler */
 static gint
 expose(GtkWidget *w, GdkEventExpose *ev, gpointer d)
@@ -95,6 +99,7 @@ expose(GtkWidget *w, GdkEventExpose *ev, gpointer d)
 	return FALSE;
 }
 /* ----- */
+#endif
 
 void
 StatBar_Redraw(void)
@@ -114,7 +119,9 @@ StatBar_Redraw(void)
 void
 StatBar_Show(int sw)
 {
-#if 0
+#if 1
+	(void)sw;
+#else
 	if (sw) {
 		if (statbar == 0) {
 			GdkVisual *visual;
@@ -222,7 +229,9 @@ StatBar_UpdateTimer(void)
 void
 StatBar_HDD(int hd)
 {
-#if 0
+#if 1
+	(void)hd;
+#else
 	HddLedTmp = hd;
 	if ((HddLed != hd) && (hd)) {
 		gdk_draw_pixmap(devstat_pixmap[2],
@@ -238,7 +247,10 @@ StatBar_HDD(int hd)
 void
 StatBar_SetFDD(int drv, char* file)
 {
-#if 0
+#if 1
+	(void)drv;
+	(void)file;
+#else
 	char name[81];
 	char *f;
 	int i;
@@ -278,7 +290,12 @@ StatBar_SetFDD(int drv, char* file)
 void
 StatBar_ParamFDD(int drv, int access, int insert, int blink)
 {
-#if 0
+#if 1
+	(void)drv;
+	(void)access;
+	(void)insert;
+	(void)blink;
+#else
 	int update;
 
 	if ((drv < 0) || (drv > 1))
@@ -316,6 +333,8 @@ void
 StatBar_FDName(int drv, char* name)
 {
 	/* Full screen 専用 */
+	(void)drv;
+	(void)name;
 }
 
 
@@ -323,4 +342,8 @@ void
 StatBar_FDD(int drv, int led, int col)
 {
 	/* Full screen 専用 */
+	(void)drv;
+	(void)led;
+	(void)col;
 }
+#endif
