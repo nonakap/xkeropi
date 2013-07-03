@@ -304,8 +304,8 @@ WinX68k_Cleanup(void)
 // -----------------------------------------------------------------------------------
 void WinX68k_Exec(void)
 {
-	char *test = NULL;
-	int clk_total, clkdiv, usedclk, hsync, clk_next, clk_count, clk_line;
+	//char *test = NULL;
+	int clk_total, clkdiv, usedclk, hsync, clk_next, clk_count, clk_line=0;
 	int KeyIntCnt = 0, MouseIntCnt = 0;
 	DWORD t_start = timeGetTime(), t_end;
 
@@ -606,6 +606,7 @@ main(int argc, char *argv[])
 
 	/* ウィンドウの作成 */
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
+	gtk_widget_set_uposition(window, winx, winy);
 
 	main_vbox = gtk_vbox_new(FALSE, 1);
 	gtk_container_border_width(GTK_CONTAINER(main_vbox), 1);

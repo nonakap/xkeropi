@@ -88,14 +88,13 @@ static void xmenu_toggle_item(char *name, int onoff, int emitp);
 
 static gint wm_timer(gpointer data);
 
-void file_selection(int type, char *title, char *defstr, int arg);
+static void file_selection(int type, char *title, char *defstr, void *arg);
 
-struct file_selection {
+typedef struct {
 	GtkWidget *fs;
 	int type;
-	int drive;
-};
-typedef struct file_selection file_selection_t;
+	void *arg;
+} file_selection_t;
 
 /******************************************************************************
  * init
@@ -671,7 +670,7 @@ fdd_open(gpointer data, guint action, GtkWidget *w)
 {
 
 	if (action < 2)
-		file_selection(0, "Open FD image", filepath, action);
+		file_selection(0, "Open FD image", filepath, (void *)action);
 }
 
 static void
@@ -804,29 +803,33 @@ FDType(const char *fname)
 	}
 	return FD_Non;
 }
+
 static void
 file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 {
-	D88_HEADER d88;
-	FILEH fp;
-	struct stat st;
 	file_selection_t *fsp = (file_selection_t *)gfs;
 	GtkFileSelection *fs = (GtkFileSelection *)fsp->fs;
 	char *p;
-	int ro = 0;
-	int type;
 
 	p = (char *)gtk_file_selection_get_filename(fs);
 	if (p != NULL) {
+		D88_HEADER d88;
+		struct stat st;
+		FILEH fp;
+		int drive;
+		int type;
+		int ro = 0;
+
 		if (stat(p, &st) == 0) {
 			if (!S_ISDIR(st.st_mode)) {
 				switch (fsp->type) {
 				case 0:
-					FDD_EjectFD(fsp->drive);
+					drive = (int)(long)fsp->arg;
+					FDD_EjectFD(drive);
 					strlcpy(filepath, p, MAX_PATH);
 					if ((st.st_mode & S_IWUSR) == 0)
 						ro = 1;
-					FDD_SetFD(fsp->drive, p, ro);
+					FDD_SetFD(drive, p, ro);
 					break;
 				}
 			}
@@ -848,7 +851,7 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 							Error("ファイルの作成に失敗しました。\n");
 						} else {
 							bzero(&d88, sizeof(d88));
-							d88.fd_size =sizeof(D88_HEADER);
+							d88.fd_size = sizeof(D88_HEADER);
 							d88.fd_type = 0x20;
 							File_Write(fp, &d88, sizeof(D88_HEADER));
 							File_Close(fp);
@@ -874,11 +877,12 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 					}
 
 					if (is_opened) {
-						FDD_EjectFD(fsp->drive);
+						drive = (int)(long)fsp->arg;
+						FDD_EjectFD(drive);
 						strlcpy(filepath, p, MAX_PATH);
 						if ((st.st_mode & S_IWUSR) == 0)
 							ro = 1;
-						FDD_SetFD(fsp->drive, p, ro);
+						FDD_SetFD(drive, p, ro);
 					}
 				}
 				break;
@@ -897,8 +901,8 @@ file_selection_destroy(GtkWidget *w, GtkWidget **wp)
 	gtk_widget_destroy(w);
 }
 
-void
-file_selection(int type, char *title, char *defstr, int arg)
+static void
+file_selection(int type, char *title, char *defstr, void *arg)
 {
 	GtkWidget *file_dialog;
 	file_selection_t *fsp;
@@ -919,7 +923,7 @@ file_selection(int type, char *title, char *defstr, int arg)
 
 	fsp->fs = file_dialog;
 	fsp->type = type;
-	fsp->drive = arg;
+	fsp->arg = arg;
 
 	gtk_window_set_position(GTK_WINDOW(file_dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(file_dialog), TRUE);

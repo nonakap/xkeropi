@@ -50,47 +50,29 @@ void StatBar_Show(int sw)
 	HPEN hpen, oldpen;
 	HDC dc;
 
-	if ( FullScreenFlag ) {
-		if ( sw ) {
-			StatBar_Redraw();
+	if ( sw ) {
+		if ( !hWndStat ) {
+			hWndStat = CreateStatusWindow(WS_CHILD/*|WS_VISIBLE*/, 0, hWndMain, 1);
+			GetWindowRect(hWndStat, &rectStat);
+			heightStat = rectStat.bottom-rectStat.top;
+			winh += heightStat;
+			MoveWindow(hWndMain, winx, winy, winw, winh, TRUE);
+			MoveWindow(hWndStat, 0, winh-heightStat, rectStat.right-rectStat.left, winh, TRUE);
+			SendMessage(hWndStat, SB_SETPARTS, 4, (LPARAM)widths);
+			PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|0, 0);
+			PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|1, 0);
+			PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|2, 0);
+			ShowWindow(hWndStat, SW_SHOW);
 		} else {
-			dc = GetDC(hWndMain);
-			hbrush = CreateSolidBrush(color[0]);
-			hpen   = CreatePen(PS_SOLID, 1, color[0]);
-			oldbr  = (HBRUSH) SelectObject(dc, hbrush);
-			oldpen = (HPEN)   SelectObject(dc, hpen);
-			Rectangle(dc, 0, FULLSCREEN_POSY+512, 799, 600);
-			SelectObject(dc, oldbr);
-			SelectObject(dc, oldpen);
-			DeleteObject(hbrush);
-			DeleteObject(hpen);
-			ReleaseDC(hWndMain, dc);
+			GetWindowRect(hWndStat, &rectStat);
+			MoveWindow(hWndStat, 0, winh-heightStat, rectStat.right-rectStat.left, winh, TRUE);
 		}
 	} else {
-		if ( sw ) {
-			if ( !hWndStat ) {
-				hWndStat = CreateStatusWindow(WS_CHILD/*|WS_VISIBLE*/, 0, hWndMain, 1);
-				GetWindowRect(hWndStat, &rectStat);
-				heightStat = rectStat.bottom-rectStat.top;
-				winh += heightStat;
-				MoveWindow(hWndMain, winx, winy, winw, winh, TRUE);
-				MoveWindow(hWndStat, 0, winh-heightStat, rectStat.right-rectStat.left, winh, TRUE);
-				SendMessage(hWndStat, SB_SETPARTS, 4, (LPARAM)widths);
-				PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|0, 0);
-				PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|1, 0);
-				PostMessage(hWndStat, SB_SETTEXT, SBT_OWNERDRAW|2, 0);
-				ShowWindow(hWndStat, SW_SHOW);
-			} else {
-				GetWindowRect(hWndStat, &rectStat);
-				MoveWindow(hWndStat, 0, winh-heightStat, rectStat.right-rectStat.left, winh, TRUE);
-			}
-		} else {
-			if ( hWndStat ) {
-				winh -= heightStat;
-				DestroyWindow(hWndStat);
-				hWndStat = 0;
-				MoveWindow(hWndMain, winx, winy, winw, winh, TRUE);
-			}
+		if ( hWndStat ) {
+			winh -= heightStat;
+			DestroyWindow(hWndStat);
+			hWndStat = 0;
+			MoveWindow(hWndMain, winx, winy, winw, winh, TRUE);
 		}
 	}
 #endif

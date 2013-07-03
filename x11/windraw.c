@@ -7,6 +7,7 @@
 #include "bg.h"
 #include "crtc.h"
 #include "gvram.h"
+#include "mouse.h"
 #include "palette.h"
 #include "prop.h"
 #include "tvram.h"
@@ -26,19 +27,19 @@ BYTE Draw_ClrMenu = 0;
 BYTE Draw_BitMask[800];
 BYTE Draw_TextBitMask[800];
 
-int winx=0, winy=0;
-int winh=0, winw=0;
+int winx = 0, winy = 0;
+int winh = 0, winw = 0;
+int root_width, root_height;
 WORD FrameCount = 0;
 int SplashFlag = 0;
 
 WORD WinDraw_Pal16B, WinDraw_Pal16R, WinDraw_Pal16G;
 
-int  WindowX = 0;
-int  WindowY = 0;
+int WindowX = 0;
+int WindowY = 0;
 
 GdkImage *surface;
 GdkRectangle surface_rect = { 16, 16, FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT };
-
 GdkImage *scaled_screen;
 GdkPixmap *pixmap;
 GdkPixmap *splash_pixmap;
@@ -50,15 +51,42 @@ GdkImage *gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect
 
 void WinDraw_InitWindowSize(WORD width, WORD height)
 {
+	static BOOL inited = FALSE;
+
+	if (!inited) {
+		GdkWindow *t, *root = window->window;
+
+		while ((t = gdk_window_get_parent(root)) != 0)
+			root = t;
+		gdk_window_get_size(root, &root_width, &root_height);
+		inited = TRUE;
+	}
+
+	gdk_window_get_position(window->window, &winx, &winy);
 
 	winw = width;
 	winh = height;
+
+	if (root_width < winw)
+		winx = (root_width - winw) / 2;
+	else if (winx < 0)
+		winx = 0;
+	else if ((winx + winw) > root_width)
+		winx = root_width - winw;
+	if (root_height < winh)
+		winy = (root_height - winh) / 2;
+	else if (winy < 0)
+		winy = 0;
+	else if ((winy + winh) > root_height)
+		winy = root_height - winh;
 }
 
 void WinDraw_ChangeSize(void)
 {
 	int oldx = WindowX, oldy = WindowY, dif;
+
 	Mouse_ChangePos();
+
 	switch (Config.WinStrech) {
 	case 0:
 		WindowX = TextDotX;
@@ -117,7 +145,7 @@ void WinDraw_ChangeSize(void)
 	if ((oldx == WindowX) && (oldy == WindowY))
 		return;
 
-	if (TextDotX == WindowX && TextDotY == WindowY)
+	if ((TextDotX == WindowX) && (TextDotY == WindowY))
 		screen_mode = 0;
 	else {
 		screen_mode = 1;
@@ -125,7 +153,6 @@ void WinDraw_ChangeSize(void)
 			gdk_image_destroy(scaled_screen);
 		scaled_screen = gdk_image_new(GDK_IMAGE_FASTEST,
 		    surface->visual, WindowX, WindowY);
-		assert(scaled_screen);
 	}
 	if (surface) {
 		bzero(ScrBuf, FULLSCREEN_WIDTH * FULLSCREEN_HEIGHT * 2);
@@ -137,11 +164,12 @@ void WinDraw_ChangeSize(void)
 
 	WinDraw_InitWindowSize((WORD)WindowX, (WORD)WindowY);
 	gtk_widget_set_usize(drawarea, winw, winh);
+	gtk_widget_set_uposition(window, winx, winy);
 	StatBar_Show(Config.WindowFDDStat);
 	Mouse_ChangePos();
 }
 
-static int dispflag = 0;
+//static int dispflag = 0;
 void WinDraw_StartupScreen(void)
 {
 }
@@ -152,26 +180,41 @@ void WinDraw_CleanupScreen(void)
 
 void WinDraw_ChangeMode(int flag)
 {
+
 	/* full screen mode(TRUE) <-> window mode(FALSE) */
 }
 
 void WinDraw_ShowSplash(void)
 {
+
+	gdk_draw_pixmap(pixmap,
+	    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
+	    splash_pixmap, 0, 0,
+	    768 - keropi_xpm_width, 512 - keropi_xpm_height,
+	    keropi_xpm_width, keropi_xpm_height);
 }
 
 void WinDraw_HideSplash(void)
 {
+
+	gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE, 0, 0,
+	    FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT);
+	Draw_DrawFlag = 1;
 }
 
 int WinDraw_Init(void)
 {
 	GdkVisual *visual;
 	GdkColormap *colormap;
-	GdkPixmap *gdkpixmap;
 	GdkBitmap *mask;
 
 	WindowX = 768;
 	WindowY = 512;
+
+	if ((root_width < WindowX) || (root_height < WindowY)) {
+		fprintf(stderr, "No support resolution.\n");
+		return FALSE;
+	}
 
 	visual = gtk_widget_get_visual(drawarea);
 
@@ -217,7 +260,7 @@ int WinDraw_Init(void)
 	colormap = gtk_widget_get_colormap(window);
 	splash_pixmap = gdk_pixmap_colormap_create_from_xpm_d(NULL, colormap,
 	    &mask, NULL, keropi_xpm);
-	if (gdkpixmap == NULL)
+	if (splash_pixmap == NULL)
 		g_error("Couldn't create replacement pixmap.");
 
 	return TRUE;
@@ -1650,7 +1693,7 @@ INLINE void WinDraw_DrawTRLine(void)
 
 void WinDraw_DrawLine(void)
 {
-	int opaq, ton=0, gon=0, bgon=0, tron=0, pron=0, tdrawed=0, gdrawed=0;
+	int opaq, ton=0, gon=0, bgon=0, tron=0, pron=0, tdrawed=0;
 
 	if (!TextDirtyLine[VLINE]) return;
 	TextDirtyLine[VLINE] = 0;
