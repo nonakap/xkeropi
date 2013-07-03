@@ -1,16 +1,27 @@
 XCOMM	$Id$
 
+XCOMM
 XCOMM disable sound
+XCOMM
 #undef	NO_SOUND
 
+XCOMM
 XCOMM disable mercury unit
-#define	NO_MERCURY
+XCOMM
+#undef	NO_MERCURY
 
-XCOMM for Opt.
-CDEBUGFLAGS= -O3 -m486
-CDEBUGFLAGS+= -funroll-loops -fomit-frame-pointer
+XCOMM
+XCOMM for x86 Opt.
+XCOMM
+XCOMM CDEBUGFLAGS= -O3 -march=i686 -mpentiumpro
+XCOMM CDEBUGFLAGS+= -funroll-loops -ffast-math
+XCOMM CDEBUGFLAGS+= -fomit-frame-pointer
+XCOMM for gcc 3
+XCOMM CDEBUGFLAGS+= -msse -mfpmath=sse
 
+XCOMM
 XCOMM for DEBUG
+XCOMM
 XCOMM CDEBUGFLAGS= -g -O2
 XCOMM CDEBUGFLAGS+= -g
 XCOMM CDEBUGFLAGS+= -W -Wall

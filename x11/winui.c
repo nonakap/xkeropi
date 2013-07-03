@@ -362,7 +362,7 @@ static GtkItemFactoryEntry menu_items[] = {
 { "/Option/sep3",		NULL, NULL, 0, "<Separator>" },
 { "/Option/Config",		NULL, NULL, 0, NULL },
 { "/_Help",			NULL, NULL, 0, "<Branch>" },
-{ "/Help/About",		NULL, NULL, 0, NULL },
+{ "/Help/About",		NULL, _(create_about_dialog), 0, NULL },
 { "/Debug",			NULL, NULL, 0, "<Branch>" },
 { "/Debug/Trace",		NULL, _(toggle), s("db_trace"),"<ToggleItem>"},
 { "/Debug/sep0",		NULL, NULL, 0, "<Separator>" },

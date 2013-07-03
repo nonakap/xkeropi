@@ -59,7 +59,8 @@ FMGENOBJS= \
 X11OBJS= \
 	x11/joystick.o x11/juliet.o x11/keyboard.o x11/mouse.o x11/prop.o \
 	x11/status.o x11/timer.o \
-	x11/dswin.o x11/windraw.o x11/winui.o
+	x11/dswin.o x11/windraw.o x11/winui.o \
+	x11/about.o
 X11CXXOBJS= x11/winx68k.o
 X11ASMOBJS= x11/haveunit.o
 
