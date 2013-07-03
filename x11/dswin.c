@@ -1,4 +1,4 @@
-/*	$Id: dswin.c,v 1.2 2008/11/08 01:42:42 nonaka Exp $	*/
+/*	$Id: dswin.c,v 1.3 2010/11/07 14:22:50 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -53,14 +53,14 @@
 	char	*audio_event;
 	char	*audio_buffer[NAUDIOBUFFER];
 
-// ぷろとたいぷ
+// ????????????
 DWORD calc_blocksize(DWORD size);
 static void sdlaudio_callback(void *userdata, unsigned char *stream, int len);
 static BOOL buffer_init(DWORD rate, DWORD samples);
 static void buffer_cleanup(void);
 
 // ---------------------------------------------------------------------------
-//  初期化
+//  ??????
 // ---------------------------------------------------------------------------
 #ifndef NOSOUND
 #include	"SDL.h"
@@ -73,18 +73,18 @@ DSound_Init(unsigned long rate, unsigned long buflen)
 	DWORD samples;
 	int rv;
 
-	// 初期化済みか？
+	// ??????????????
 	if (playing) {
 		return FALSE;
 	}
 
-	// 無音指定か？
+	// ????????????
 	if (rate == 0) {
 		audio_fd = -1;
 		return TRUE;
 	}
 
-	// pcmfreemax = Dsoundバッファの半分のサンプル数
+	// pcmfreemax = Dsound??????????????????????????
 	pcmfree = pcmfreemax = (DWORD)rate * buflen / 200 / 2;
 	ds_halfbuffer = pcmfreemax * 4;
 	pcmbufp = pcmbuffer;
@@ -95,14 +95,14 @@ DSound_Init(unsigned long rate, unsigned long buflen)
 	audio_nextbuf = 0;
 	audio_event = 0;
 
-	// 初期化
+	// ??????
 	rv = SDL_Init(SDL_INIT_AUDIO);
 	if (rv < 0) {
 		audio_fd = -1;
 		return FALSE;
 	}
 
-	// サウンドバッファを確保するよ〜
+	// ??????????????????????????????
 	bzero(&fmt, sizeof(fmt));
 	fmt.freq = rate;
 	fmt.format = AUDIO_S16SYS;
@@ -140,7 +140,7 @@ DSound_Stop(void)
 
 
 // ---------------------------------------------------------------------------
-//  後片付け
+//  ????????
 // ---------------------------------------------------------------------------
 
 int
@@ -159,7 +159,7 @@ DSound_Cleanup(void)
 
 
 // ---------------------------------------------------------------------------
-//  適当に呼ばれる
+//  ??????????????
 // ---------------------------------------------------------------------------
 
 void FASTCALL
@@ -214,7 +214,7 @@ DSound_Send(void)
 
 			memcpy(q, pcmbuffer, ds_halfbuffer);
 
-			// リセット
+			// ????????
 			pcmbufp = pcmbuffer;
 			pcmfree = pcmfreemax;
 		}
@@ -225,12 +225,10 @@ static void
 sdlaudio_callback(void *userdata, unsigned char *stream, int len)
 {
 
-	UNUSED(len);
-
 	if (audio_event != NULL)
 		bzero(audio_event, (DWORD)userdata);
 
-	SDL_MixAudio(stream, audio_buffer[audio_nextbuf], (DWORD)userdata,
+	SDL_MixAudio(stream, audio_buffer[audio_nextbuf], len,
 	    SDL_MIX_MAXVOLUME);
 
 	audio_nextbuf = (audio_nextbuf + 1) % NAUDIOBUFFER;
@@ -238,7 +236,7 @@ sdlaudio_callback(void *userdata, unsigned char *stream, int len)
 }
 
 // ---------------------------------------------------------------------------
-//  その他
+//  ??????
 // ---------------------------------------------------------------------------
 
 DWORD
