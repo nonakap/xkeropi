@@ -1,7 +1,5 @@
 /*	$Id$	*/
 
-#define	USE_PIXMAP
-
 #include "common.h"
 #include "winx68k.h"
 #include "winui.h"
@@ -17,7 +15,6 @@
 
 extern BYTE Debug_Text, Debug_Grp, Debug_Sp;
 
-//WORD ScrBuf[FULLSCREEN_WIDTH*FULLSCREEN_HEIGHT];
 WORD *ScrBuf = 0;
 
 int Draw_Opaque;
@@ -40,10 +37,16 @@ int  WindowX = 0;
 int  WindowY = 0;
 
 GdkImage *surface;
-GdkImage *tlbuf;
+GdkRectangle surface_rect = { 16, 16, FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT };
+
+GdkImage *scaled_screen;
 GdkPixmap *pixmap;
 GdkPixmap *splash_pixmap;
-static int screen_mode = 0;
+static int screen_mode;
+
+
+GdkImage *gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRectangle *src_rect);
+
 
 void WinDraw_InitWindowSize(WORD width, WORD height)
 {
@@ -54,7 +57,7 @@ void WinDraw_InitWindowSize(WORD width, WORD height)
 
 void WinDraw_ChangeSize(void)
 {
-	int oldx=WindowX, oldy=WindowY, dif;
+	int oldx = WindowX, oldy = WindowY, dif;
 	Mouse_ChangePos();
 	switch (Config.WinStrech) {
 	case 0:
@@ -108,16 +111,21 @@ void WinDraw_ChangeSize(void)
 			WindowY = oldy = 512;
 	}
 
+	surface_rect.width = TextDotX;
+	surface_rect.height = TextDotY;
+
 	if ((oldx == WindowX) && (oldy == WindowY))
 		return;
 
-	screen_mode = 0;
-	if ((WindowX == TextDotX) && (WindowY == TextDotY * 2))
+	if (TextDotX == WindowX && TextDotY == WindowY)
+		screen_mode = 0;
+	else {
 		screen_mode = 1;
-	else if ((WindowX == TextDotX * 2) && (WindowY == TextDotY))
-		screen_mode = 2;
-	else if ((WindowX == TextDotX * 2) && (WindowY == TextDotY * 2))
-		screen_mode = 3;
+		if (scaled_screen)
+			gdk_image_destroy(scaled_screen);
+		scaled_screen = gdk_image_new(GDK_IMAGE_FASTEST,
+		    surface->visual, WindowX, WindowY);
+	}
 
 	WinDraw_InitWindowSize((WORD)WindowX, (WORD)WindowY);
 	gtk_widget_set_usize(drawarea, winw, winh);
@@ -188,18 +196,11 @@ int WinDraw_Init(void)
 	}
 	ScrBuf = (WORD *)(surface->mem);
 
-	/* 幅2倍作業用 */
-	tlbuf = gdk_image_new(GDK_IMAGE_FASTEST, visual, FULLSCREEN_WIDTH, 2);
-	if (tlbuf == NULL) {
-		g_message("can't create surface.");
-		return 1;
-	}
-
-	pixmap = gdk_pixmap_new(drawarea->window, FULLSCREEN_WIDTH,
-	    FULLSCREEN_HEIGHT, visual->depth);
+	pixmap = gdk_pixmap_new(drawarea->window,
+	    FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT, visual->depth);
 	if (pixmap == NULL) {
 		g_message("can't create pixmap.");
-		return 1;
+		return FALSE;
 	}
 	gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE, 0, 0,
 	    FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT);
@@ -218,9 +219,17 @@ void
 WinDraw_Cleanup(void)
 {
 
+	if (splash_pixmap) {
+		gdk_pixmap_unref(splash_pixmap);
+		splash_pixmap = 0;
+	}
 	if (pixmap) {
 		gdk_pixmap_unref(pixmap);
 		pixmap = 0;
+	}
+	if (scaled_screen) {
+		gdk_image_destroy(scaled_screen);
+		scaled_screen = 0;
 	}
 	if (surface) {
 		gdk_image_destroy(surface);
@@ -241,7 +250,6 @@ WinDraw_Draw(void)
 {
 	GtkWidget *w = (GtkWidget *)drawarea;
 	GdkDrawable *d = (GdkDrawable *)drawarea->window;
-	//int sx, sy;
 
 	FrameCount++;
 	if (!Draw_DrawFlag)
@@ -251,24 +259,14 @@ WinDraw_Draw(void)
 	if (SplashFlag)
 		WinDraw_ShowSplash();
 
-#if 0
-	if (TextDotX > SCREEN_WIDTH)
-		sx = (TextDotX - SCREEN_WIDTH) / 2;
-	else
-		sx = 0;
-	if (TextDotY > SCREEN_HEIGHT)
-		sy = (TextDotY - SCREEN_HEIGHT) / 2;
-	else
-		sy = 0;
-#endif
-
-#if defined(USE_PIXMAP)
-	gdk_draw_pixmap(d, w->style->fg_gc[GTK_WIDGET_STATE(w)],
-	    pixmap, 0, 0, 0, 0, WindowX, WindowY);
-#else
-	gdk_draw_image(d, w->style->fg_gc[GTK_WIDGET_STATE(w)],
-	    surface, 16, 16, 0, 0, WindowX, WindowY);
-#endif
+	if (screen_mode == 0) {
+		gdk_draw_pixmap(d, w->style->fg_gc[GTK_WIDGET_STATE(w)],
+		    pixmap, 0, 0, 0, 0, TextDotX, TextDotY);
+	} else {
+		gdk_scale_image(scaled_screen, surface, NULL, &surface_rect);
+		gdk_draw_image(d, w->style->fg_gc[GTK_WIDGET_STATE(w)],
+		    scaled_screen, 0, 0, 0, 0, WindowX, WindowY);
+	}
 }
 
 INLINE void WinDraw_DrawGrpLine(int opaq)
@@ -2176,65 +2174,164 @@ void WinDraw_DrawLine(void)
 #endif /* USE_ASM */
 	}
 
-#if defined(USE_PIXMAP)
 	switch (screen_mode) {
-	default:
+	case 0:
 		gdk_draw_image(pixmap,
 		    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-		    surface, 16, 16 + VLINE, 0, VLINE, TextDotX, 1);
-		break;
-
-	case 1: /* y * 2 */
-		gdk_draw_image(pixmap,
-		    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-		    surface, 16, 16 + VLINE, 0, VLINE * 2, TextDotX, 1);
-		gdk_draw_image(pixmap,
-		    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-		    surface, 16, 16 + VLINE, 0, VLINE * 2 + 1, TextDotX, 1);
-		break;
-
-	case 2:	/* x * 2 */
-#if 1
-		gdk_draw_image(pixmap,
-		    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-		    surface, 16, 16 + VLINE, 0, VLINE, TextDotX, 1);
-#else
-		{
-			WORD *t = (WORD *)tlbuf->mem;
-			DWORD adr = ((VLINE+16)*FULLSCREEN_WIDTH+16);
-			int i;
-
-			for (i = 0; i < TextDotX; ++i, ++adr)
-				t[i * 2] = t[i * 2 + 1] = ScrBuf[adr];
-
-			gdk_draw_image(pixmap,
-			    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-			    tlbuf, 0, 0, 0, VLINE, TextDotX * 2, 1);
-		}
-#endif
-		break;
-
-	case 3:	/* x * 2 + y * 2 */
-		{
-			WORD *t = (WORD *)tlbuf->mem;
-			DWORD adr = ((VLINE+16)*FULLSCREEN_WIDTH+16);
-			int i;
-
-			for (i = 0; i < TextDotX; ++i, ++adr)
-				t[i * 2] = t[i * 2 + 1] = ScrBuf[adr];
-
-			gdk_draw_image(pixmap,
-			    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-			    tlbuf, 0, 0, 0, VLINE * 2, TextDotX * 2, 1);
-			gdk_draw_image(pixmap,
-			    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-			    tlbuf, 0, 0, 0, VLINE * 2 + 1, TextDotX * 2, 1);
-		}
+		    surface, 16, 16 + VLINE, 0, VLINE, WindowX, 1);
 		break;
 	}
+}
+
+
+/* ----- */
+
+/**
+ * 最大公約数を求める
+ */
+unsigned int
+gcd(unsigned int v0, unsigned int v1)
+{
+#if 0
+/*
+ * ユークリッドの互除法版
+ */
+	unsigned int t;
+
+	if (v0 == 0 || v1 == 0)
+		return 0;
+	if (v0 == 1 || v1 == 1)
+		return 1;
+
+	if (v0 < v1)
+		t = v0, v0 = v1, v1 = t;
+
+	for (; t = v0 % v1; v0 = v1, v1 = t)
+		continue;
+	return v1;
 #else
-	gdk_draw_image(pixmap,
-	    drawarea->style->fg_gc[GTK_WIDGET_STATE(drawarea)],
-	    surface, 16, 16 + VLINE, 0, VLINE, WindowX, 1);
+/*
+ * Brent の改良型アルゴリズム
+ */
+	unsigned int c;
+	unsigned int d;
+	unsigned int t;
+
+	if (v0 == 0 || v1 == 0)
+		return 0;
+	if (v0 == 1 || v1 == 1)
+		return 1;
+	if (v0 == v1)
+		return v0;
+
+	for (c = 0; !(v0 & 1) && !(v1 & 1); v0 >>= 1, v1 >>= 1, ++c)
+		continue;
+
+	while (!(v0 & 1))
+		v0 >>= 1;
+	while (!(v1 & 1))
+		v1 >>= 1;
+	if (v0 < v1)
+		t = v0, v0 = v1, v1 = t;
+
+	for (; d = v0 - v1; v0 = v1, v1 = d) {
+		while (!(d & 1))
+			d >>= 1;
+		if (v1 < d)
+			t = v1, v1 = d, d = t;
+	}
+	return v1 << c;
 #endif
+}
+
+static void expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, unsigned int ratio[4]);
+
+GdkImage *
+gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRectangle *src_rect)
+{
+	GdkRectangle dr, sr;
+	GdkImage *new = dest;
+	unsigned int ratio[4];
+	unsigned int x_gcd, y_gcd;
+
+	g_return_val_if_fail(src != NULL, NULL);
+	g_return_val_if_fail((src->visual->depth == 15 || src->visual->depth == 16), NULL);
+
+	if (dest_rect == 0) {
+		GdkImage *p = dest ? dest : src;
+		dr.x = dr.y = 0;
+		dr.width = p->width;
+		dr.height = p->height;
+	} else 
+		dr = *dest_rect;
+
+	if (src_rect == 0) {
+		sr.x = sr.y = 0;
+		sr.width = src->width;
+		sr.height = src->height;
+	} else {
+		sr = *src_rect;
+		g_return_val_if_fail((sr.x >= 0 && sr.y >= 0), NULL);
+	}
+
+	if (new == NULL) {
+		new = gdk_image_new(GDK_IMAGE_FASTEST, src->visual, dr.width + (dr.x > 0 ? dr.x : 0), dr.height + (dr.y > 0 ? dr.y : 0));
+		g_return_val_if_fail(new != NULL, NULL);
+	}
+
+	x_gcd = gcd(sr.width, dr.width);
+	y_gcd = gcd(sr.height, dr.height);
+
+	if (x_gcd >= 2 && y_gcd >= 2)
+		/* continue */;
+	else {
+		gdk_image_destroy(new);
+		g_return_val_if_fail((x_gcd >= 2 && y_gcd >= 2), NULL);
+	}
+
+	ratio[0] /* dx_ratio */ = dr.width / x_gcd;
+	ratio[1] /* sx_ratio */ = sr.width / x_gcd;
+	ratio[2] /* dy_ratio */ = dr.height / y_gcd;
+	ratio[3] /* sy_ratio */ = sr.height / y_gcd;
+	g_return_val_if_fail((ratio[0] >= ratio[1] && ratio[2] >= ratio[3]), NULL);
+
+	expand16_fast(new, src, &dr, &sr, ratio);
+
+	return new;
+}
+
+static void
+expand16_fast(GdkImage *dest, GdkImage *src, GdkRectangle *dr, GdkRectangle *sr, unsigned int ratio[4])
+{
+	guint16 *dp, *sp;
+	int dest_right, dest_bottom;
+	int sx, sy;
+	int dx, dy;
+	int x_ratio = 0, y_ratio = 0;
+
+	dest_right = dr->x + dr->width;
+	dest_bottom = dr->y + dr->height;
+	if (dest_right < 0 && dest_bottom < 0)
+		return;
+
+	for (sy = sr->y, dy = dr->y; dy < dest_bottom; ++dy) {
+		dp = (guint16 *)(dest->mem + dest->bpl * dy);
+		sp = (guint16 *)(src->mem + src->bpl * sy);
+		for (sx = sr->x, dx = dr->x; dx < dest_right; ++dx) {
+			if (dx >= 0 && dy >= 0)
+				dp[dx] = sp[sx];
+
+			x_ratio += ratio[1] /* sx_ratio */;
+			if (ratio[0] /* dx_ratio */ <= x_ratio) {
+				++sx;
+				x_ratio -= ratio[0] /* dx_ratio */;
+			}
+		}
+
+		y_ratio += ratio[3] /* sy_ratio */;
+		if (ratio[2] /* dy_ratio */ <= y_ratio) {
+			++sy;
+			y_ratio -= ratio[2] /* dy_ratio */;
+		}
+	}
 }

@@ -29,39 +29,39 @@ extern	Text_TrFlag	; BYTE [1024]
 
 %macro	BG_DrawLineMcr8	4
 bg8_%1:
-	mov	edx, dword [%4]
-	add	edx, dword [VLINEBG]
-	sub	edx, dword [BG_VLINE]
+	mov	edx, [%4]
+	add	edx, [VLINEBG]
+	sub	edx, [BG_VLINE]
 	mov	ebp, edx
 	and	ebp, 7
 	shl	bp, 3
-	and	edx, 000001f8h
+	and	edx, 1f8h
 	shl	edx, 4
-	add	dx, word [%2]
-	mov	eax, dword [%3]
-	sub	eax, dword [BG_HAdjust]
+	add	dx, [%2]
+	mov	eax, [%3]
+	sub	eax, [BG_HAdjust]
 	mov	ecx, eax
 	and	eax, 7
 	xor	al, 15
 	mov	edi, eax
-	and	ecx, 000001f8h
+	and	ecx, 1f8h
 	shr	cx, 2
-	mov	ebx, dword [TextDotX]
+	mov	ebx, [TextDotX]
 	shl	ebx, 13
 bg8_%1_linelp:
 	movzx	esi, word [BG + ecx + edx]
 	mov	bx, si
-	and	si, 0000ff00h
+	and	si, 0ff00h
 	shr	si, 2
 	cmp	bl, 40h
 	jc	bg8_%1_flipx
 	js	bg8_%1_fxflipy
 	jge	bg8_%1_fxflipx
-	add	esi, BGCHR8 + 00000038h
+	add	esi, BGCHR8 + 38h
 	sub	esi, ebp
 	jmp	bg8_%1_flip
 bg8_%1_fxflipy:
-	add	esi, BGCHR8 + 0000003fh
+	add	esi, BGCHR8 + 3fh
 	sub	esi, ebp
 	std
 	jmp	bg8_%1_out
@@ -79,15 +79,15 @@ bg8_%1_out:
 bg8_%1_outlp:
 	lodsb
 	or	al, bl
-	and	ax, 00ffh
+	and	ax, 0ffh
 	je	bg8_%1_outed
-	test	ax, 000fh
-	mov	ax, word [TextPal + eax * 2]
+	test	ax, 0fh
+	mov	ax, [TextPal + eax * 2]
 	jne	bg8_%1_outcont
-	test	byte [Text_TrFlag + edi + 1], 2
+	test	byte [Text_TrFlag + 1 + edi], 2
 	jne	bg8_%1_outed
 bg8_%1_outcont:
-	mov	word [BG_LineBuf + 2 + edi * 2], ax
+	mov	[BG_LineBuf + 2 + edi * 2], ax
 	or	byte [Text_TrFlag + 1 + edi], 2
 bg8_%1_outed:
 	inc	edi
@@ -107,7 +107,7 @@ bg16_%1:
 	mov	ebp, edx
 	and	ebp, 15
 	shl	bp, 4
-	and	edx, 03f0h
+	and	edx, 3f0h
 	shl	edx, 3
 	add	dx, [%2]
 	mov	eax, [%3]
@@ -116,7 +116,7 @@ bg16_%1:
 	and	eax, 15
 	xor	al, 15
 	mov	edi, eax
-	and	ecx, 03f0h
+	and	ecx, 3f0h
 	shr	cx, 3
 	mov	ebx, [TextDotX]
 	shl	ebx, 12
@@ -128,11 +128,11 @@ bg16_%1_linelp:
 	jc	bg16_%1_flipx
 	js	bg16_%1_fxflipy
 	jge	bg16_%1_fxflipx
-	add	esi, BGCHR16 + 000000f0h
+	add	esi, BGCHR16 + 0f0h
 	sub	esi, ebp
 	jmp	bg16_%1_flip
 bg16_%1_fxflipy:
-	add	esi, BGCHR16 + 000000ffh
+	add	esi, BGCHR16 + 0ffh
 	sub	esi, ebp
 	std
 	jmp	bg16_%1_out
@@ -150,15 +150,15 @@ bg16_%1_out:
 bg16_%1_outlp:
 	lodsb
 	or	al, bl
-	and	ax, 00ffh
+	and	ax, 0ffh
 	je	bg16_%1_outed
-	test	ax, 000fh
-	mov	ax, word [TextPal + eax * 2]
+	test	ax, 0fh
+	mov	ax, [TextPal + eax * 2]
 	jne	bg16_%1_outcont
 	test	byte [Text_TrFlag + 1 + edi], 2
 	jne	bg16_%1_outed
 bg16_%1_outcont:
-	mov	word [BG_LineBuf + 2 + edi*2], ax
+	mov	word [BG_LineBuf + 2 + edi * 2], ax
 	or	byte [Text_TrFlag + 1 + edi], 2
 bg16_%1_outed:
 	inc	edi
@@ -178,7 +178,7 @@ bg8_ng_%1:
 	mov	ebp, edx
 	and	ebp, 7
 	shl	bp, 3
-	and	edx, 01f8h
+	and	edx, 1f8h
 	shl	edx, 4
 	add	dx, [%2]
 	mov	eax, [%3]
@@ -187,12 +187,12 @@ bg8_ng_%1:
 	and	eax, 7
 	xor	al, 15
 	mov	edi, eax
-	and	ecx, 01f8h
+	and	ecx, 1f8h
 	shr	cx, 2
 	mov	ebx, [TextDotX]
 	shl	ebx, 13
 bg8_ng_%1_linelp:
-	movzx	esi, word [BG+ecx+edx]
+	movzx	esi, word [BG + ecx + edx]
 	mov	bx, si
 	and	si, 0ff00h
 	shr	si, 2
@@ -200,20 +200,20 @@ bg8_ng_%1_linelp:
 	jc	bg8_ng_%1_flipx
 	js	bg8_ng_%1_fxflipy
 	jge	bg8_ng_%1_fxflipx
-	add	esi, BGCHR8 + 00000038h
+	add	esi, BGCHR8 + 38h
 	sub	esi, ebp
 	jmp	bg8_ng_%1_flip
 bg8_ng_%1_fxflipy:
-	add	esi, BGCHR8 + 0000003fh
+	add	esi, BGCHR8 + 3fh
 	sub	esi, ebp
 	std
 	jmp	bg8_ng_%1_out
 bg8_ng_%1_fxflipx:
-	lea	esi, [BGCHR8+esi+ebp+7]
+	lea	esi, [BGCHR8 + esi + ebp + 7]
 	std
 	jmp	bg8_ng_%1_out
 bg8_ng_%1_flipx:
-	lea	esi, [BGCHR8+esi+ebp]
+	lea	esi, [BGCHR8 + esi + ebp]
 bg8_ng_%1_flip:
 	cld
 bg8_ng_%1_out:
@@ -221,12 +221,12 @@ bg8_ng_%1_out:
 	shl	bl, 4
 bg8_ng_%1_outlp:
 	lodsb
-	and	ax, 000fh
+	and	ax, 0fh
 	je	bg8_ng_%1_outed
 	or	al, bl
-	mov	ax, word [TextPal+eax*2]
-	mov	word [BG_LineBuf+2+edi*2], ax
-	or	byte [Text_TrFlag+1+edi], 2
+	mov	ax, [TextPal + eax * 2]
+	mov	[BG_LineBuf + 2 + edi * 2], ax
+	or	byte [Text_TrFlag + 1 + edi], 2
 bg8_ng_%1_outed:
 	inc	edi
 	dec	bh
@@ -245,7 +245,7 @@ bg16_ng_%1:
 	mov	ebp, edx
 	and	ebp, 15
 	shl	bp, 4
-	and	edx, 03f0h
+	and	edx, 3f0h
 	shl	edx, 3
 	add	dx, [%2]
 	mov	eax, [%3]
@@ -254,32 +254,32 @@ bg16_ng_%1:
 	and	eax, 15
 	xor	al, 15
 	mov	edi, eax
-	and	ecx, 03f0h
+	and	ecx, 3f0h
 	shr	cx, 3
 	mov	ebx, [TextDotX]
 	shl	ebx, 12
 bg16_ng_%1_linelp:
-	movzx	esi, word [BG+ecx+edx]
+	movzx	esi, word [BG + ecx + edx]
 	mov	bx, si
 	and	si, 0ff00h
 	cmp	bl, 40h
 	jc	bg16_ng_%1_flipx
 	js	bg16_ng_%1_fxflipy
 	jge	bg16_ng_%1_fxflipx
-	add	esi, BGCHR16 + 000000f0h
+	add	esi, BGCHR16 + 0f0h
 	sub	esi, ebp
 	jmp	bg16_ng_%1_flip
 bg16_ng_%1_fxflipy:
-	add	esi, BGCHR16 + 000000ffh
+	add	esi, BGCHR16 + 0ffh
 	sub	esi, ebp
 	std
 	jmp	bg16_ng_%1_out
 bg16_ng_%1_fxflipx:
-	lea	esi, [BGCHR16+esi+ebp+15]
+	lea	esi, [BGCHR16 + esi + ebp + 15]
 	std
 	jmp	bg16_ng_%1_out
 bg16_ng_%1_flipx:
-	lea	esi, [BGCHR16+esi+ebp]
+	lea	esi, [BGCHR16 + esi + ebp]
 bg16_ng_%1_flip:
 	cld
 bg16_ng_%1_out:
@@ -287,12 +287,12 @@ bg16_ng_%1_out:
 	shl	bl, 4
 bg16_ng_%1_outlp:
 	lodsb
-	and	ax, 000fh
+	and	ax, 0fh
 	je	bg16_ng_%1_outed
 	or	al, bl
-	mov	ax, word [TextPal+eax*2]
-	mov	word [BG_LineBuf+2+edi*2], ax
-	or	byte [Text_TrFlag+1+edi], 2
+	mov	ax, [TextPal + eax * 2]
+	mov	[BG_LineBuf + 2 + edi * 2], ax
+	or	byte [Text_TrFlag + 1 + edi], 2
 bg16_ng_%1_outed:
 	inc	edi
 	dec	bh
@@ -306,16 +306,17 @@ bg16_ng_%1_outed:
 struc	spritectrltbl
 	.sprite_posx	resw	1
 	.sprite_posy	resw	1
-	.sprite_ctrl	resb	1
+	.sprite_ctrl	resw	1
 	.sprite_ply	resb	1
+	.dummy		resb	1
 endstruc
 
 %macro	Sprite_DrawLineMcr	2
 	mov	ebp, [TextDotX]
 	add	ebp, 16
-	mov	edx, 127*8
+	mov	edx, 127 * 8
 spline_%1_lp:
-	mov	al, byte [Sprite_Regs + edx + spritectrltbl.sprite_ply]
+	mov	al, [Sprite_Regs + spritectrltbl.sprite_ply + edx]
 	and	al, 3
 	cmp	al, %2
 	je	spline_%1_plyhit
@@ -324,20 +325,20 @@ spline_%1_lpcnt:
 	jns	spline_%1_lp
 	jmp	spline_%1_ed
 spline_%1_plyhit:
-	movzx	edi, word [Sprite_Regs + edx + spritectrltbl.sprite_posx]
+	movzx	edi, word [Sprite_Regs + spritectrltbl.sprite_posx + edx]
 	add	edi, [BG_HAdjust]
-	and	di, 03ffh
+	and	di, 3ffh
 	cmp	edi, ebp
 	jnc	spline_%1_lpcnt
-	movzx	eax, word [Sprite_Regs + edx + spritectrltbl.sprite_posy]
-	and	ax, 03ffh
+	movzx	eax, word [Sprite_Regs + spritectrltbl.sprite_posy + edx]
+	and	ax, 3ffh
 	sub	eax, [VLINEBG]
 	add	eax, [BG_VLINE]
 	neg	eax
 	add	eax, 16
 	jnc	spline_%1_lpcnt
 	shl	al, 4
-	movzx	esi, byte [Sprite_Regs + edx + spritectrltbl.sprite_ctrl]
+	movzx	esi, word [Sprite_Regs + spritectrltbl.sprite_ctrl + edx]
 	mov	bx, si
 	shl	si, 8
 	cmp	bh, 40h
@@ -353,15 +354,15 @@ spline_%1_out:
 	mov	ecx, 16
 spline_%1_outlp:
 	lodsb
-	and	ax, 000fh
+	and	ax, 0fh
 	je	spline_%1_trans
 	or	al, bh
-	cmp	word [BG_PriBuf+edi*2], dx
+	cmp	[BG_PriBuf + edi * 2], dx
 	jc	spline_%1_trans
-	mov	ax, word [TextPal+eax*2]
-	mov	word [BG_LineBuf+edi*2], ax
-	or	byte [Text_TrFlag+edi], 2
-	mov	word [BG_PriBuf+edi*2], dx
+	mov	ax, [TextPal + eax * 2]
+	mov	[BG_LineBuf + edi * 2], ax
+	or	byte [Text_TrFlag + edi], 2
+	mov	[BG_PriBuf + edi * 2], dx
 spline_%1_trans:
 	inc	edi
 	loop	spline_%1_outlp
@@ -383,15 +384,15 @@ spline_%1_ed:
 	global	BG_DrawLine
 	align	16
 BG_DrawLine:
-	mov	ecx, [esp + 4]	; opaq
-	mov	edx, [esp + 8]	; gd
-
 	pushf
 	push	ebx
 	push	esi
 	push	edi
 	push	edx
 	push	ebp
+
+	mov	ecx, [esp + 1ch]	; opaq
+	mov	edx, [esp + 20h]	; gd
 
 	mov	ax, word [TextPal]
 	shl	eax, 16

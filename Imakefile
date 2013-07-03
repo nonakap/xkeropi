@@ -2,17 +2,29 @@ XCOMM	$Id$
 
 #include "config.tmpl"
 
+XCOMM gtk+ 1.2
 GTK_CONFIG?=	gtk-config
 GTK_INCLUDE=	`$(GTK_CONFIG) --cflags`
 GTK_LIB=	`$(GTK_CONFIG) --libs`
 
+XCOMM SDL 1.2
 SDL_CONFIG?=	sdl-config
 SDL_INCLUDE=	`$(SDL_CONFIG) --cflags`
 SDL_LIB=	`$(SDL_CONFIG) --libs`
 
+XCOMM nasm 0.98.35
 NASM?= nasm
 NASMFLAGS= -I./x68k -I./x11
 NASMOBJFLAGS?= -f elf
+
+#if defined(NO_SOUND)
+EXTRA_DEFINES+= -DNOSOUND
+#endif
+
+#if defined(NO_MERCURY)
+EXTRA_DEFINES+= -DNO_MERCURY
+NASMFLAGS+= -DNO_MERCURY
+#endif
 
 SYS_LIBRARIES= -lm
 
@@ -20,7 +32,6 @@ EXTRA_INCLUDES= -I./x11 -I./x68k -I./fmgen -I./win32api \
 		$(GTK_INCLUDE) $(SDL_INCLUDE)
 CXXEXTRA_INCLUDES= $(EXTRA_INCLUDES)
 
-XCOMM こんな事してもいいのかな…
 CXXEXTRA_DEFINES= $(EXTRA_DEFINES)
 CXXDEBUGFLAGS= $(CDEBUGFLAGS)
 
@@ -74,7 +85,7 @@ ALLSRCS=	$(CSRCS) $(CXXSRCS) $(ASRCS)
 	$(CXX) -o $@ $(CXXFLAGS) $(_NOOP_) -c $*.cpp
 
 .asm.o:
-	$(NASM) $(NASMFLAGS) $(NASM_EXTRA_DEFINES) $(NASMOBJFLAGS) $<
+	$(NASM) $(NASMFLAGS) $(NASMOBJFLAGS) $<
 
 ComplexProgramTarget(xkeropi)
 

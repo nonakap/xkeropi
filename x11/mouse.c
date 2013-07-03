@@ -211,6 +211,31 @@ getmaincenter(GtkWidget *w, POINT *p)
 	p->y = w->allocation.y + w->allocation.height / 2;
 }
 
+#if GTK_MAJOR_VERSION == 2
+#include <gdk/x11/gdkx.h>
+#include <gdk/x11/gdkdrawable-x11.h>
+#include <gdk/x11/gdkscreen-x11.h>
+#include <gdk/x11/gdkwindow-x11.h>
+
+void
+gdk_window_set_pointer(GdkWindow *window, gint x, gint y)
+{
+	GdkScreen *screen;
+	GdkScreenX11 *screen_x11;
+
+	if (window == 0) {
+		screen = gdk_screen_get_default();
+		window = gdk_screen_get_root_window(screen);
+	} else
+		screen = gdk_drawable_get_screen(window);
+	if (GDK_WINDOW_DESTROYED(window))
+		return;
+
+	screen_x11 = GDK_SCREEN_X11(screen);
+	XWarpPointer(screen_x11->xdisplay, None, GDK_WINDOW_XID(window),
+	    0, 0, 0, 0, x, y);
+}
+#elif GTK_MAJOR_VERSION == 1
 #include <gdk/gdkprivate.h>
 
 void
@@ -228,3 +253,4 @@ gdk_window_set_pointer(GdkWindow *window, gint x, gint y)
 	XWarpPointer(private->xdisplay, None, private->xwindow,
 	    0, 0, 0, 0, x, y);
 }
+#endif

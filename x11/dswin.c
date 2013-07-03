@@ -114,7 +114,6 @@ DSound_Init(unsigned long rate, unsigned long buflen)
 	fmt.channels = 2;
 	fmt.samples = samples;
 	fmt.callback = sdlaudio_callback;
-	//fmt.userdata = (void *)(samples * 4);
 	fmt.userdata = (void *)ds_halfbuffer;
 	audio_fd = SDL_OpenAudio(&fmt, NULL);
 	if (audio_fd < 0) {

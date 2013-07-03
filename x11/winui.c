@@ -818,7 +818,7 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 	int ro = 0;
 	int type;
 
-	p = gtk_file_selection_get_filename(fs);
+	p = (char *)gtk_file_selection_get_filename(fs);
 	if (p != NULL) {
 		if (stat(p, &st) == 0) {
 			if (!S_ISDIR(st.st_mode)) {
