@@ -11,14 +11,14 @@
 #include "prop.h"
 
 BYTE	LastCode = 0;
-BYTE	KEYCONFFILE[] = "keyconf.dat";
+BYTE	KEYCONFFILE[] = "xkeyconf.dat";
 
 int	CurrentHDDNo = 0;
 
 static const SSTPPorts[] = {11000, 9801, 0};
 
 BYTE ini_title[] = "WinX68k";
-static char X68KeyName[128][10] = {
+static BYTE X68KeyName[128][10] = {
 	"         \0", "ESC\0      ", "1\0        ", "2\0        ", "3\0        ", "4\0        ", "5\0        ", "6\0        ", 
 	"7\0        ", "8\0        ", "9\0        ", "0\0        ", "-\0        ", "^\0        ", "\\\0        ", "BS\0       ", 
 	"TAB\0      ", "Q\0        ", "W\0        ", "E\0        ", "R\0        ", "T\0        ", "Y\0        ", "U\0        ", 
@@ -37,8 +37,8 @@ static char X68KeyName[128][10] = {
 	"         \0", "         \0", "         \0", "         \0", "         \0", "         \0", "         \0", "         \0", 
 };
 
-static char MIDI_TYPE_NAME[4][7] = {
-	"LA音源\0", "GM音源\0", "GS音源\0", "XG音源\0"
+static BYTE MIDI_TYPE_NAME[4][8] = {
+	"LA音源", "GM音源", "GS音源", "XG音源"
 };
 
 BYTE KeyTableBk[512];
@@ -132,8 +132,13 @@ int
 set_modulepath(char *path, size_t len)
 {
 	struct stat sb;
+	char *homepath;
 
-	snprintf(path, len, "%s/%s", getenv("HOME"), ".keropi");
+	homepath = getenv("HOME");
+	if (homepath == 0)
+		homepath = ".";
+
+	g_snprintf(path, len, "%s/%s", homepath, ".keropi");
 	if (stat(path, &sb) < 0) {
 		if (mkdir(path, 0700) < 0) {
 			perror(path);
@@ -145,7 +150,7 @@ set_modulepath(char *path, size_t len)
 			return 1;
 		}
 	}
-	snprintf(winx68k_ini, sizeof(winx68k_ini), "%s/%s", path, "config");
+	g_snprintf(winx68k_ini, sizeof(winx68k_ini), "%s/%s", path, "config");
 	if (stat(winx68k_ini, &sb) >= 0) {
 		if (sb.st_mode & S_IFDIR) {
 			fprintf(stderr, "%s is directory.\n", winx68k_ini);
@@ -153,15 +158,6 @@ set_modulepath(char *path, size_t len)
 		}
 	}
 
-#if 0
-	snprintf(fontfile, sizeof(fontfile), "%s/%s", modulefile, "font.bmp");
-	if (stat(fontfile, &sb) >= 0) {
-		if (sb.st_mode & S_IFDIR) {
-			fprintf(stderr, "%s is directory.\n", fontfile);
-			return 1;
-		}
-	}
-#endif
 	return 0;
 }
 
@@ -383,60 +379,513 @@ void SaveConfig(void)
 }
 
 
-#if 0
-static LRESULT CALLBACK PropDialogProc(HWND hDlg, UINT Msg, WPARAM wParam, LPARAM lParam);
-void PropPage_Init(void);
+/* --------------- */
 
-extern HINSTANCE hInst;
-extern HWND hWndMain;
+static Win68Conf ConfigProp;
 
-#define NUM_PROPSHEETS  8
+static GtkWidget *create_sound_note(void);
+static GtkWidget *create_midi_note(void);
+static GtkWidget *create_mouse_note(void);
+static GtkWidget *create_others_note(void);
 
-static DWORD dwDlgId[] = {
-	IDD_PROP_SOUND,
-	IDD_PROP_MIDI,
-	IDD_PROP_KEYBOARD,
-	IDD_PROP_JOYSTICK1,
-	IDD_PROP_JOYSTICK2,
-	IDD_PROP_MOUSE,
-	IDD_PROP_SCSI,
-	IDD_PROP_OTHERS,
-};
-#endif
-
-void PropPage_Init(void)
+static void
+delete_event(GtkWidget *w, GdkEvent *ev, gpointer data)
 {
-#if 0
-	PROPSHEETPAGE	pspage[NUM_PROPSHEETS];
-	PROPSHEETHEADER	pshead;
-	int i;
 
-	pshead.hwndParent     = hWndMain;
-	pshead.dwSize         = sizeof(PROPSHEETHEADER);
-	pshead.dwFlags        = PSH_PROPSHEETPAGE | PSH_USEICONID ;
-	pshead.hInstance      = hInst;
-	pshead.pszCaption     = "けろぴーの行動設定";
-	pshead.nPages         = NUM_PROPSHEETS;
-	pshead.nStartPage     = 0;
-	pshead.pszIcon        = MAKEINTRESOURCE(IDI_MAIN_ICON);
-	pshead.ppsp           = pspage;
-
-	for (i = 0; i < NUM_PROPSHEETS; i++)
-	{
-		pspage[i].dwSize      = sizeof(PROPSHEETPAGE);
-		pspage[i].dwFlags     = 0;
-		pspage[i].hInstance   = hInst;
-		pspage[i].pszTemplate = MAKEINTRESOURCE(dwDlgId[i]);
-		pspage[i].pfnCallback = NULL;
-		pspage[i].lParam      = 0;
-		pspage[i].pfnDlgProc  = PropDialogProc;
-	}
-
-	if (PropertySheet(&pshead) == -1)
-		Error("プロパティシートの作成に失敗しました。");
-#endif
+	UNUSED(w);
+	UNUSED(ev);
+	UNUSED(data);
+	gtk_main_quit();
 }
 
+static void
+dialog_destroy(GtkWidget *w, GtkWidget **wp)
+{
+
+        UNUSED(wp);
+	gtk_widget_destroy(w);
+}
+
+/*
+ * Config dialog
+ */
+void
+PropPage_Init(void)
+{
+	GtkWidget *dialog;
+	GtkWidget *dialog_table;
+	GtkWidget *notebook;
+	GtkWidget *note;
+	GtkWidget *ok_button;
+	GtkWidget *cancel_button;
+	GtkWidget *accept_button;
+
+	ConfigProp = Config;
+
+	dialog = gtk_window_new(GTK_WINDOW_DIALOG);
+	gtk_window_set_title(GTK_WINDOW(dialog), "Configure Keropi");
+	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
+	gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
+	gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
+	    GTK_SIGNAL_FUNC(dialog_destroy), NULL);
+
+	dialog_table = gtk_table_new(10, 4, FALSE);
+	gtk_container_add(GTK_CONTAINER(dialog), dialog_table);
+	gtk_widget_show(dialog_table);
+
+	/* notebook */
+	notebook = gtk_notebook_new();
+	gtk_notebook_set_tab_pos(GTK_NOTEBOOK(notebook), GTK_POS_TOP);
+	gtk_notebook_set_scrollable(GTK_NOTEBOOK(notebook), TRUE);
+	gtk_table_attach_defaults(GTK_TABLE(dialog_table),notebook, 0, 4, 0, 9);
+	gtk_widget_show(notebook);
+
+	/* Sound note */
+	note = create_sound_note();
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), note,
+	    gtk_label_new("Sound"));
+	gtk_widget_show(note);
+
+	/* MIDI note */
+	note = create_midi_note();
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), note,
+	    gtk_label_new("MIDI"));
+	gtk_widget_show(note);
+
+	/* Keyboard note */
+	/* Joystick1 note */
+	/* Joystick2 note */
+
+	/* Mouse note */
+	note = create_mouse_note();
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), note,
+	    gtk_label_new("Mouse"));
+	gtk_widget_show(note);
+
+	/* SCSI note */
+
+	/* Others note */
+	note = create_others_note();
+	gtk_notebook_append_page(GTK_NOTEBOOK(notebook), note,
+	    gtk_label_new("Others"));
+	gtk_widget_show(note);
+
+	/* ページ下部ボタン */
+	ok_button = gtk_button_new_with_label("OK");
+	gtk_table_attach_defaults(GTK_TABLE(dialog_table), ok_button,
+	    1, 2, 9, 10);
+	gtk_signal_connect_object(GTK_OBJECT(ok_button), "clicked",
+	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT);
+	GTK_WIDGET_SET_FLAGS(ok_button, GTK_HAS_DEFAULT);
+	gtk_widget_grab_default(ok_button);
+	gtk_widget_show(ok_button);
+
+	cancel_button = gtk_button_new_with_label("Cancel");
+	gtk_container_set_border_width(GTK_CONTAINER(cancel_button), 5);
+	gtk_table_attach_defaults(GTK_TABLE(dialog_table), cancel_button,
+	    2, 3, 9, 10);
+	gtk_signal_connect_object(GTK_OBJECT(cancel_button), "clicked",
+	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	gtk_widget_show(cancel_button);
+
+	accept_button = gtk_button_new_with_label("Accept");
+	gtk_container_set_border_width(GTK_CONTAINER(accept_button), 5);
+	gtk_table_attach_defaults(GTK_TABLE(dialog_table), accept_button,
+	    3, 4, 9, 10);
+	gtk_signal_connect_object(GTK_OBJECT(accept_button), "clicked",
+	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	gtk_widget_show(accept_button);
+
+	gtk_widget_show(dialog);
+}
+
+/*
+ * Sound note
+ */
+static void sample_rate_button_clicked(GtkButton *b, gpointer d);
+static void adpcm_lpf_button_clicked(GtkButton *b, gpointer d);
+static void vol_adj_value_changed(GtkAdjustment *adj, gpointer d);
+
+static const struct {
+	const char *str;
+	int rate;
+} sample_rate[] = {
+	{ "No Sound",     0 },
+	{ "11kHz",    11025 },
+	{ "22kHz",    22050 },
+	{ "44kHz",    44100 },
+	{ "48kHz",    48000 },
+};
+
+static const struct {
+	const char *name;
+	gfloat value;
+	gfloat min;
+	gfloat max;
+
+	size_t offset;
+} sound_right_frame[] = {
+	{ "Buffer size",    50.0, 10.0, 200.0, offsetof(Win68Conf,BufferSize) },
+	{ "ADPCM volume",   15.0,  0.0,  16.0, offsetof(Win68Conf,PCM_VOL)    },
+	{ "OPM volume",     12.0,  0.0,  16.0, offsetof(Win68Conf,OPM_VOL)    },
+	{ "Mercury volume", 13.0,  0.0,  16.0, offsetof(Win68Conf,MCR_VOL)    },
+};
+
+static GtkWidget *
+create_sound_note(void)
+{
+	GtkWidget *main_vbox;
+	GtkWidget *hbox;
+	GtkWidget *vbox;
+	GtkWidget *frame;
+	GtkWidget *button[NELEMENTS(sample_rate)];
+	GSList *gslist;
+	int i;
+
+	main_vbox = gtk_vbox_new(FALSE, 2);
+
+	hbox = gtk_hbox_new(FALSE, 2);
+	gtk_box_pack_start(GTK_BOX(main_vbox), hbox, FALSE, FALSE, 10);
+	gtk_widget_show(hbox);
+
+	frame = gtk_frame_new("Sample rate");
+	gtk_container_set_border_width(GTK_CONTAINER(frame), 5);
+	gtk_box_pack_start(GTK_BOX(hbox), frame, FALSE, FALSE, 0);
+	gtk_widget_show(frame);
+
+	vbox = gtk_vbox_new(FALSE, 5);
+	gtk_container_add(GTK_CONTAINER(frame), vbox);
+	gtk_widget_show(vbox);
+
+	/* Sample rate */
+	for (gslist = 0, i = 0; i < NELEMENTS(sample_rate); ++i) {
+		button[i] = gtk_radio_button_new_with_label(gslist,
+		    sample_rate[i].str);
+		GTK_WIDGET_UNSET_FLAGS(button[i], GTK_CAN_FOCUS);
+		gslist = gtk_radio_button_group(GTK_RADIO_BUTTON(button[i]));
+		gtk_box_pack_start(GTK_BOX(vbox), button[i], FALSE, FALSE, 0);
+		gtk_signal_connect(GTK_OBJECT(button[i]), "clicked",
+		    GTK_SIGNAL_FUNC(sample_rate_button_clicked),
+		    (gpointer)sample_rate[i].rate);
+		gtk_widget_show(button[i]);
+	}
+	for (i = 0; i < NELEMENTS(sample_rate); ++i) {
+		if (sample_rate[i].rate == Config.SampleRate)
+			break;
+	}
+	if (i == NELEMENTS(sample_rate))
+		i = 0;
+	gtk_signal_emit_by_name(GTK_OBJECT(button[i]), "clicked");
+
+	vbox = gtk_vbox_new(FALSE, 4);
+	gtk_box_pack_start(GTK_BOX(hbox), vbox, TRUE, TRUE, 10);
+	gtk_widget_show(vbox);
+
+	for (i = 0; i < NELEMENTS(sound_right_frame); ++i) {
+		GtkObject *adjust;
+		GtkWidget *hscale;
+		GtkWidget *align;
+
+		frame = gtk_frame_new(sound_right_frame[i].name);
+		gtk_box_pack_start(GTK_BOX(vbox), frame, TRUE, TRUE, 0);
+		gtk_widget_show(frame);
+
+		align = gtk_alignment_new(0.5, 0.5, 0.9, 0.9);
+		gtk_container_add(GTK_CONTAINER(frame), align);
+		gtk_widget_show(align);
+
+		adjust = gtk_adjustment_new(sound_right_frame[i].value,
+		    sound_right_frame[i].min, sound_right_frame[i].max,
+		    1.0, 0.0, 0.0);
+		hscale = gtk_hscale_new(GTK_ADJUSTMENT(adjust));
+		gtk_scale_set_value_pos(GTK_SCALE(hscale), GTK_POS_RIGHT);
+		gtk_scale_set_digits(GTK_SCALE(hscale), 0);
+		gtk_container_add(GTK_CONTAINER(align), hscale);
+		gtk_signal_connect(GTK_OBJECT(adjust), "value_changed",
+			    GTK_SIGNAL_FUNC(vol_adj_value_changed),(gpointer)i);
+		gtk_widget_show(hscale);
+		if (i == 0)
+			gtk_adjustment_set_value(GTK_ADJUSTMENT(adjust),
+			    Config.BufferSize);
+		else {
+			int *p = (int *)(((char *)&Config) + sound_right_frame[i].offset);
+			gtk_adjustment_set_value(GTK_ADJUSTMENT(adjust), *p);
+		}
+	}
+
+	button[0] = gtk_check_button_new_with_label("Enable ADPCM LPF");
+	gtk_container_set_border_width(GTK_CONTAINER(button[0]), 5);
+	gtk_box_pack_start(GTK_BOX(main_vbox), button[0], TRUE, TRUE, 0);
+	gtk_signal_connect(GTK_OBJECT(button[0]), "clicked",
+		    GTK_SIGNAL_FUNC(adpcm_lpf_button_clicked), 0);
+	gtk_widget_show(button[0]);
+	if (Config.Sound_LPF)
+		gtk_signal_emit_by_name(GTK_OBJECT(button[0]), "clicked");
+
+	return main_vbox;
+}
+
+static void
+sample_rate_button_clicked(GtkButton *b, gpointer d)
+{
+	
+	UNUSED(b);
+	ConfigProp.SampleRate = (DWORD)((long)d);
+}
+
+static void
+adpcm_lpf_button_clicked(GtkButton *b, gpointer d)
+{
+
+	UNUSED(d);
+	ConfigProp.Sound_LPF = GTK_TOGGLE_BUTTON(b)->active;
+}
+
+static void
+vol_adj_value_changed(GtkAdjustment *adj, gpointer d)
+{
+	int val = (int)(GTK_ADJUSTMENT(adj)->value);
+	int idx = (int)(long)d;
+	size_t offset = sound_right_frame[idx].offset;
+
+	if (idx == 0)
+		ConfigProp.BufferSize = (DWORD)val;
+	else {
+		int *p = (int *)(((char *)&ConfigProp) + offset);
+		*p = val;
+	}
+}
+
+/*
+ * Midi note
+ */
+static const char *midi_init[] = {
+	"LA",
+	"GM",
+	"GS",
+	"XG",
+};
+
+static GtkWidget *
+create_midi_note(void)
+{
+
+	GtkWidget *vbox;
+	GtkWidget *button;
+	GtkWidget *label;
+	GtkWidget *combo;
+	GtkWidget *entry;
+	GtkWidget *hbox;
+	GtkWidget *midi_init_entry;
+	GList *items;
+	int i;
+
+	vbox = gtk_vbox_new(FALSE, 4);
+
+	hbox = gtk_hbox_new(FALSE, 3);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+	gtk_widget_show(hbox);
+
+	button = gtk_check_button_new_with_label("Enable MIDI");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	combo = gtk_combo_new();
+	gtk_container_set_border_width(GTK_CONTAINER(combo), 5);
+	gtk_combo_set_value_in_list(GTK_COMBO(combo), TRUE, TRUE);
+	gtk_combo_set_use_arrows_always(GTK_COMBO(combo), TRUE);
+	for (items = 0, i = 0; i < NELEMENTS(midi_init); ++i)
+		items = g_list_append(items, (gpointer)midi_init[i]);
+	gtk_combo_set_popdown_strings(GTK_COMBO(combo), items);
+	g_list_free(items);
+	gtk_box_pack_end(GTK_BOX(hbox), combo, FALSE, FALSE, 0);
+	gtk_widget_show(combo);
+
+	label = gtk_label_new("- MIDI initialized method: ");
+	gtk_box_pack_end(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+	gtk_widget_show(label);
+
+	midi_init_entry = GTK_COMBO(combo)->entry;
+	gtk_entry_set_editable(GTK_ENTRY(midi_init_entry), FALSE);
+	gtk_widget_show(midi_init_entry);
+
+	button = gtk_check_button_new_with_label(
+	    "Send initialize command when X68k is reseted");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	button = gtk_check_button_new_with_label("Use MIMPI tone map");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(vbox), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	hbox = gtk_hbox_new(FALSE, 5);
+	gtk_box_pack_start(GTK_BOX(vbox), hbox, FALSE, FALSE, 0);
+	gtk_widget_show(hbox);
+
+	entry = gtk_entry_new();
+	gtk_entry_set_max_length(GTK_ENTRY(entry), MAX_PATH - 1);
+	gtk_box_pack_start(GTK_BOX(hbox), entry, TRUE, TRUE, 10);
+	gtk_widget_show(entry);
+
+	button = gtk_button_new_with_label("Browse...");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(hbox), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	return vbox;
+}
+
+/*
+ * Mouse note
+ */
+static GtkWidget *
+create_mouse_note(void)
+{
+	GtkWidget *w;
+	GtkWidget *frame;
+	GtkWidget *vbox;
+	GtkWidget *hbox;
+	GtkWidget *align;
+	GtkWidget *hscale;
+	GtkWidget *label;
+	GtkObject *adjust;
+
+	w = gtk_vbox_new(FALSE, 1);
+
+	frame = gtk_frame_new("Mouse Speed");
+	gtk_box_pack_start(GTK_BOX(w), frame, FALSE, FALSE, 0);
+	gtk_widget_show(frame);
+
+	align = gtk_alignment_new(0.5, 0.5, 0.9, 0.9);
+	gtk_container_add(GTK_CONTAINER(frame), align);
+	gtk_widget_show(align);
+
+	vbox = gtk_vbox_new(FALSE, 2);
+	gtk_container_add(GTK_CONTAINER(align), vbox);
+	gtk_widget_show(vbox);
+
+	adjust = gtk_adjustment_new(1.0, 0.1, 2.0, 0.1, 0.1, 0.0);
+	hscale = gtk_hscale_new(GTK_ADJUSTMENT(adjust));
+	gtk_scale_set_draw_value(GTK_SCALE(hscale), FALSE);
+	gtk_box_pack_start(GTK_BOX(vbox), hscale, TRUE, TRUE, 0);
+	gtk_widget_show(hscale);
+
+	hbox = gtk_hbox_new(TRUE, 3);
+	gtk_box_pack_end(GTK_BOX(vbox), hbox, TRUE, TRUE, 0);
+	gtk_widget_show(hbox);
+
+	label = gtk_label_new("x0.1");
+	gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_LEFT);
+	gtk_misc_set_alignment(GTK_MISC(label), 0.0, 0.0);
+	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+	gtk_widget_show(label);
+
+	label = gtk_label_new("x1.0");
+	gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_CENTER);
+	gtk_misc_set_alignment(GTK_MISC(label), 0.5, 0.0);
+	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+	gtk_widget_show(label);
+
+	label = gtk_label_new("x2.0");
+	gtk_label_set_justify(GTK_LABEL(label), GTK_JUSTIFY_RIGHT);
+	gtk_misc_set_alignment(GTK_MISC(label), 1.0, 0.0);
+	gtk_box_pack_start(GTK_BOX(hbox), label, TRUE, TRUE, 0);
+	gtk_widget_show(label);
+
+	return w;
+}
+
+/*
+ * Others note
+ */
+static GtkWidget *
+create_others_note(void)
+{
+	static const char *sasi_drive_str[16] = {
+		"0", "1", "2", "3", "4", "5", "6", "7", "8",
+		"9", "10", "11", "12", "13", "14", "15",
+	};
+
+	GtkWidget *w;
+	GtkWidget *frame;
+	GtkWidget *align;
+	GtkWidget *table;
+	GtkWidget *label;
+	GtkWidget *combo;
+	GtkWidget *entry;
+	GtkWidget *button;
+	GList *items;
+	int i;
+
+	w = gtk_vbox_new(FALSE, 3);
+
+	frame = gtk_frame_new("HDD (SASI) Drive");
+	gtk_box_pack_start(GTK_BOX(w), frame, FALSE, FALSE, 0);
+	gtk_widget_show(frame);
+
+	align = gtk_alignment_new(0.5, 0.5, 0.9, 0.9);
+	gtk_container_add(GTK_CONTAINER(frame), align);
+	gtk_widget_show(align);
+
+	table = gtk_table_new(2, 5, FALSE);
+	gtk_container_add(GTK_CONTAINER(align), table);
+	gtk_widget_show(table);
+
+	label = gtk_label_new("Drive #:");
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 0, 1);
+	gtk_widget_show(label);
+
+	combo = gtk_combo_new();
+	gtk_combo_set_value_in_list(GTK_COMBO(combo), TRUE, TRUE);
+	gtk_combo_set_use_arrows_always(GTK_COMBO(combo), TRUE);
+	for (items = 0, i = 0; i < NELEMENTS(sasi_drive_str); ++i) {
+		items = g_list_append(items, (gpointer)sasi_drive_str[i]);
+	}
+	gtk_combo_set_popdown_strings(GTK_COMBO(combo), items);
+	g_list_free(items);
+	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
+	gtk_widget_show(combo);
+
+	button = gtk_button_new_with_label("Remove");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_table_attach_defaults(GTK_TABLE(table), button, 3, 4, 0, 1);
+	gtk_widget_show(button);
+
+	button = gtk_button_new_with_label("New");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_table_attach_defaults(GTK_TABLE(table), button, 4, 5, 0, 1);
+	gtk_widget_show(button);
+
+	label = gtk_label_new("Filename:");
+	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
+	gtk_widget_show(label);
+
+	entry = gtk_entry_new();
+	gtk_entry_set_max_length(GTK_ENTRY(entry), MAX_PATH - 1);
+	gtk_table_attach_defaults(GTK_TABLE(table), entry, 1, 4, 1, 2);
+	gtk_widget_show(entry);
+
+	button = gtk_button_new_with_label("Browse...");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_table_attach_defaults(GTK_TABLE(table), button, 4, 5, 1, 2);
+	gtk_widget_show(button);
+
+	button = gtk_check_button_new_with_label("Show FDD status");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(w), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	button = gtk_check_button_new_with_label("Enable SRAM virus warning");
+	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
+	gtk_box_pack_start(GTK_BOX(w), button, FALSE, FALSE, 0);
+	gtk_widget_show(button);
+
+	return w;
+}
 
 void Setup_JoystickPage(HWND hDlg)
 {

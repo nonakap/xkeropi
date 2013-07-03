@@ -50,7 +50,7 @@ extern "C" {
 #include "d68k.h"
 #endif
 
-#include "../icons/keropi.xbm"
+#include "../icons/keropi_mono.xbm"
 
 #define	APPNAME	"Keropi"
 
@@ -530,7 +530,7 @@ set_icon_bitmap(GtkWidget *w)
 
 	gdk_window_set_icon_name(w->window, APPNAME);
 	icon_pixmap = gdk_bitmap_create_from_data(
-	    w->window, keropi_bits, keropi_width, keropi_height);
+	    w->window, keropi_mono_bits, keropi_mono_width, keropi_mono_height);
 	gdk_window_set_icon(w->window, NULL, icon_pixmap, NULL);
 }
 

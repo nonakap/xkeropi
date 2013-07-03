@@ -11,9 +11,9 @@ XCOMM
 #undef	NO_MERCURY
 
 XCOMM
-XCOMM for x86 Opt.
+XCOMM for Opt.
 XCOMM
-XCOMM CDEBUGFLAGS= -O3 -march=i686 -mpentiumpro
+XCOMM CDEBUGFLAGS= -O3 -march=i686 -mcpu=pentiumpro
 XCOMM CDEBUGFLAGS+= -funroll-loops -ffast-math
 XCOMM CDEBUGFLAGS+= -fomit-frame-pointer
 XCOMM for gcc 3
@@ -22,7 +22,6 @@ XCOMM CDEBUGFLAGS+= -msse -mfpmath=sse
 XCOMM
 XCOMM for DEBUG
 XCOMM
-XCOMM CDEBUGFLAGS= -g -O2
 XCOMM CDEBUGFLAGS+= -g
-XCOMM CDEBUGFLAGS+= -W -Wall
+XCOMM CDEBUGFLAGS+= -W -Wall -Winitialized -Wunused
 XCOMM CDEBUGFLAGS+= -DINLINE=
