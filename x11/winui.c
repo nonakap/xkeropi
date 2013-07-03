@@ -1,4 +1,4 @@
-/*	$Id: winui.c,v 1.7 2008/11/08 02:24:18 nonaka Exp $	*/
+/*	$Id: winui.c,v 1.8 2008/11/11 02:46:30 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003,2008 NONAKA Kimihiro
@@ -145,6 +145,8 @@ WinUI_Init(void)
 	    GTK_SIGNAL_FUNC(button_press), NULL);
 	gtk_signal_connect(GTK_OBJECT(window), "button_release_event",
 	    GTK_SIGNAL_FUNC(button_release), NULL);
+	gtk_signal_connect(GTK_OBJECT(window), "motion_notify_event",
+	    GTK_SIGNAL_FUNC(motion_notify), NULL);
 
 	gtk_signal_connect(GTK_OBJECT(drawarea), "expose_event",
 	    GTK_SIGNAL_FUNC(expose), NULL);

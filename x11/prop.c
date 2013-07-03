@@ -1,4 +1,4 @@
-/*	$Id: prop.c,v 1.3 2008/11/08 01:42:42 nonaka Exp $	*/
+/*	$Id: prop.c,v 1.4 2008/11/17 12:02:08 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -186,7 +186,7 @@ void LoadConfig(void)
 	Config.OPM_VOL = GetPrivateProfileInt(ini_title, "OPM_Volume", 12, winx68k_ini);
 	Config.PCM_VOL = GetPrivateProfileInt(ini_title, "PCM_Volume", 15, winx68k_ini);
 	Config.MCR_VOL = GetPrivateProfileInt(ini_title, "MCR_Volume", 13, winx68k_ini);
-	Config.SampleRate = GetPrivateProfileInt(ini_title, "SampleRate", 22050, winx68k_ini);
+	Config.SampleRate = GetPrivateProfileInt(ini_title, "SampleRate", 0, winx68k_ini);
 	Config.BufferSize = GetPrivateProfileInt(ini_title, "BufferSize", 50, winx68k_ini);
 
 	Config.MouseSpeed = GetPrivateProfileInt(ini_title, "MouseSpeed", 10, winx68k_ini);

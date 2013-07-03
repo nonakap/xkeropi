@@ -1,4 +1,4 @@
-/*	$Id: peace.c,v 1.2 2003/12/05 18:07:15 nonaka Exp $	*/
+/*	$Id: peace.c,v 1.4 2008/11/17 12:24:18 nonaka Exp $	*/
 
 /*
  * Copyright 2000 Masaru OKI
@@ -363,9 +363,19 @@ GetPrivateProfileString(LPCSTR sect, LPCSTR key, LPCSTR defvalue,
 	char lbuf[256];
 	FILE *fp;
 
+	if (sect == NULL
+	 || key == NULL
+	 || defvalue == NULL
+	 || buf == NULL
+	 || len == 0
+	 || inifile == NULL)
+		return 0;
+
+	bzero(buf, len);
+
 	fp = fopen(inifile, "r");
 	if (fp == NULL)
-		return 0;
+		goto nofile;
 	while (!feof(fp)) {
 		fgets(lbuf, sizeof(lbuf), fp);
 		/* XXX should be case insensitive */
@@ -396,6 +406,7 @@ GetPrivateProfileString(LPCSTR sect, LPCSTR key, LPCSTR defvalue,
 notfound:
 	DPRF(("[%s]:%s not found\n", sect, key));
 	fclose(fp);
+nofile:
 	strncpy(buf, defvalue, len);
 	/* not include nul */
 	return strlen(buf);
@@ -407,9 +418,14 @@ GetPrivateProfileInt(LPCSTR sect, LPCSTR key, INT defvalue, LPCSTR inifile)
 	char lbuf[256];
 	FILE *fp;
 
-	fp = fopen(inifile, "r");
-	if (!fp)
+	if (sect == NULL
+	 || key == NULL
+	 || inifile == NULL)
 		return 0;
+
+	fp = fopen(inifile, "r");
+	if (fp == NULL)
+		goto nofile;
 	while (!feof(fp)) {
 		fgets(lbuf, sizeof(lbuf), fp);
 		/* XXX should be case insensitive */
@@ -418,9 +434,8 @@ GetPrivateProfileInt(LPCSTR sect, LPCSTR key, INT defvalue, LPCSTR inifile)
 		    && lbuf[strlen(sect) + 1] == ']')
 			break;
 	}
-	if (feof(fp)) {
+	if (feof(fp))
 		goto notfound;
-	}
 	while (!feof(fp)) {
 		fgets(lbuf, sizeof(lbuf), fp);
 		if (lbuf[0] == '[' && strchr(lbuf, ']'))
@@ -436,5 +451,6 @@ GetPrivateProfileInt(LPCSTR sect, LPCSTR key, INT defvalue, LPCSTR inifile)
 	}
 notfound:
 	fclose(fp);
+nofile:
 	return defvalue;
 }
