@@ -1,4 +1,4 @@
-/*	$Id: about.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
+/*	$Id: about.c,v 1.4 2008/11/08 02:24:18 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro
@@ -12,11 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgment:
- *      This product includes software developed by NONAKA Kimihiro.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -87,10 +82,13 @@ create_about_dialog(void)
 	GtkWidget *nekolgc_pixmap;
 	GtkWidget *opm_pixmap;
 
-	dialog = gtk_window_new(GTK_WINDOW_DIALOG);
+	dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(dialog), "About Keropi");
 	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
+#if GTK_MAJOR_VERSION > 1
+	gtk_window_set_resizable(GTK_WINDOW(dialog), FALSE);
+#endif
 	gtk_signal_connect(GTK_OBJECT(dialog), "destroy",
 	    GTK_SIGNAL_FUNC(dialog_destroy), NULL);
 

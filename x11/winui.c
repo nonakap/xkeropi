@@ -1,7 +1,7 @@
-/*	$Id: winui.c,v 1.4 2007/02/06 15:12:06 nonaka Exp $	*/
+/*	$Id: winui.c,v 1.7 2008/11/08 02:24:18 nonaka Exp $	*/
 
 /* 
- * Copyright (c) 2003 NONAKA Kimihiro
+ * Copyright (c) 2003,2008 NONAKA Kimihiro
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,11 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgment:
- *      This product includes software developed by NONAKA Kimihiro.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -103,6 +98,7 @@ extern  int		dmatrace;
 			 | GDK_BUTTON2_MOTION_MASK	\
 			 | GDK_BUTTON3_MOTION_MASK	\
 			 | GDK_POINTER_MOTION_MASK	\
+			 | GDK_POINTER_MOTION_HINT_MASK	\
 			 | GDK_KEY_PRESS_MASK		\
 			 | GDK_KEY_RELEASE_MASK		\
 			 | GDK_BUTTON_PRESS_MASK	\
@@ -114,6 +110,7 @@ static gint key_press(GtkWidget *w, GdkEventKey *ev);
 static gint key_release(GtkWidget *w, GdkEventKey *ev);
 static gint button_press(GtkWidget *w, GdkEventButton *ev);
 static gint button_release(GtkWidget *w, GdkEventButton *ev);
+static gint motion_notify(GtkWidget *w, GdkEventMotion *ev);
 static gint expose(GtkWidget *w, GdkEventExpose *ev);
 
 static void xmenu_toggle_item(char *name, int onoff, int emitp);
@@ -177,7 +174,7 @@ static gint
 expose(GtkWidget *w, GdkEventExpose *ev)
 {
 
-	(void)w;
+	UNUSED(w);
 
 	if (ev->type == GDK_EXPOSE) {
 		if (ev->count == 0) {
@@ -197,7 +194,7 @@ static gint
 key_press(GtkWidget *w, GdkEventKey *ev)
 {
 
-	(void)w;
+	UNUSED(w);
 
 	if (ev->type == GDK_KEY_PRESS) {
 		if (ev->keyval != GDK_F12)
@@ -215,7 +212,7 @@ static gint
 key_release(GtkWidget *w, GdkEventKey *ev)
 {
 
-	(void)w;
+	UNUSED(w);
 
 	if (ev->type == GDK_KEY_RELEASE) {
 		if (ev->keyval == GDK_F12) {
@@ -235,7 +232,7 @@ static gint
 button_press(GtkWidget *w, GdkEventButton *ev)
 {
 
-	(void)w;
+	UNUSED(w);
 
 	if (ev->type == GDK_BUTTON_PRESS) {
 		switch (ev->button) {
@@ -279,6 +276,32 @@ button_release(GtkWidget *w, GdkEventButton *ev)
 			Mouse_Event(2, FALSE);
 			break;
 		}
+		return TRUE;
+	}
+	return FALSE;
+}
+
+/*
+- Signal: gint GtkWidget::motion_notify_event (GtkWidget *WIDGET,
+         GdkEventMotion *EVENT)
+*/
+static gint
+motion_notify(GtkWidget *w, GdkEventMotion *ev)
+{
+	GdkModifierType state;
+	int x, y;
+
+	UNUSED(w);
+
+	if (ev->type == GDK_MOTION_NOTIFY) {
+		if (ev->is_hint) {
+			gdk_window_get_pointer (ev->window, &x, &y, &state);
+		} else {
+			x = ev->x;
+			y = ev->y;
+			state = ev->state;
+		}
+		Mouse_Event(0, (x << 16) | y);
 		return TRUE;
 	}
 	return FALSE;
@@ -458,7 +481,7 @@ create_menu(GtkWidget *w)
 	accel_group = gtk_accel_group_new();
 	item_factory = gtk_item_factory_new(GTK_TYPE_MENU_BAR, "<main>", accel_group);
 	gtk_item_factory_create_items(item_factory, NELEMENTS(menu_items), menu_items, NULL);
-	gtk_accel_group_attach(accel_group, GTK_OBJECT(w));
+	gtk_window_add_accel_group(GTK_WINDOW(w), accel_group);
 
 	xmenu_toggle_item("fullscreen", FullScreenFlag, 1);
 	xmenu_toggle_item("mouse", MouseSW, 1);

@@ -10,6 +10,6 @@
 #define APP_VER_MINOR	65
 #define APP_VER_STRING	"0.65"
 
-#define	SOURCE_VERSION	"20031211"
+#define	SOURCE_VERSION	"20081108"
 
 #endif //_version_h

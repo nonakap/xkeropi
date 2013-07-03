@@ -15,9 +15,9 @@ xkeropi - エックスけろぴー (WinX68k for X)
     
         コンパイルには以下のソフトウェアが必要です。
 
-        ・gcc (2.95.x もしくは 3.x でコンパイルできる事を確認しています)
-	・nasm (0.98 よりも新しいバージョン。0.98 では駄目です)
-        ・GTK+ 1.2.x
+        ・gcc (4.1.3 で動作確認をしています)
+        ・nasm (2.03.01 で動作確認をしています)
+        ・GTK+ 2.x
         ・SDL 1.2.x
 
     1.2. 動作環境
@@ -31,10 +31,9 @@ xkeropi - エックスけろぴー (WinX68k for X)
 
         開発環境は以下の通りです。
 
-          ・NetBSD/i386 (Celeron-500MHz)
-          ・XFree86 4.3.0 (3D Rage Mobility, 1024x768x16bpp)
-          ・GTK+ 1.2.10
-          ・SDL 1.2.5
+          ・NetBSD/i386
+          ・GTK+ 2.14.4
+          ・SDL 1.2.13
 
 
 2. コンパイル＆インストール方法
@@ -61,11 +60,11 @@ xkeropi - エックスけろぴー (WinX68k for X)
            置いてください。その際、ファイル名は全て全て小文字にしてください。
 
            BIOS ROM イメージは実機から取得するなり RetroPC Network さん
-	   (http://retropc.net/) から辿れる X68000 LIBRARY から取得して
-	   ください。
+           (http://retropc.net/) から辿れる X68000 LIBRARY から取得して
+           ください。
 
            フォント ROM イメージは実機から取得してください。また、WinX68k を
-	   フォント ROM 無しで起動した際に生成される cgrom.tmp も使用可能です。
+           フォント ROM 無しで起動した際に生成される cgrom.tmp も使用可能です。
 
 3. 実行
 
@@ -99,12 +98,12 @@ xkeropi - エックスけろぴー (WinX68k for X)
 
     本ソフトウェアに関する問い合わせは以下のメールアドレスにお願いします。
 
-        NONAKA Kimihiro (埜中公博) / aw9k-nnk@asahi-net.or.jp
+        NONAKA Kimihiro (埜中公博) / nonakap@gmail.com
 
     また、ソフトウェアのバージョンアップ等の情報は以下の URL から取得できます。
 
-        http://retropc.net/monaka/keropi/
+        http://www.asahi-net.or.jp/~aw9k-nnk/keropi/
 
 
 -- 
-		$Id: README.ja,v 1.2 2003/05/25 07:49:58 nonaka Exp $
+		$Id: README.ja,v 1.3 2008/11/08 02:26:12 nonaka Exp $

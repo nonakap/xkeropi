@@ -1,7 +1,7 @@
-/*	$Id: mouse.c,v 1.2 2003/12/05 18:07:16 nonaka Exp $	*/
+/*	$Id: mouse.c,v 1.5 2008/11/08 02:24:18 nonaka Exp $	*/
 
 /* 
- * Copyright (c) 2003 NONAKA Kimihiro
+ * Copyright (c) 2003,2008 NONAKA Kimihiro
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -12,11 +12,6 @@
  * 2. Redistributions in binary form must reproduce the above copyright
  *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
- * 3. All advertising materials mentioning features or use of this software
- *    must display the following acknowledgment:
- *      This product includes software developed by NONAKA Kimihiro.
- * 4. The name of the author may not be used to endorse or promote products
- *    derived from this software without specific prior written permission.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
  * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
@@ -43,7 +38,7 @@ BYTE	MouseStat = 0;
 BYTE	MouseSW = 0;
 
 POINT	CursorPos;
-int	mousex=0, mousey=0;
+int	mousex = 0, mousey = 0;
 
 static GdkPixmap *cursor_pixmap;
 static GdkCursor *cursor;
@@ -121,8 +116,10 @@ void Mouse_SetData(void)
 	int x, y;
 
 	if (MouseSW) {
-		mousex += (MousePosX - (TextDotX / 2)) * Config.MouseSpeed;
-		mousey += (MousePosY - (TextDotY / 2)) * Config.MouseSpeed;
+		getmaincenter(window, &pt);
+
+		mousex += (MousePosX - pt.x) * Config.MouseSpeed;
+		mousey += (MousePosY - pt.y) * Config.MouseSpeed;
 		x = mousex / 10;
 		y = mousey / 10;
 		mousex -= x * 10;
@@ -135,8 +132,9 @@ void Mouse_SetData(void)
 		} else if (x < -128) {
 			MouseSt |= 0x20;
 			MouseX = -128;
-		} else
+		} else {
 			MouseX = (signed char)x;
+		}
 
 		if (y > 127) {
 			MouseSt |= 0x40;
@@ -144,12 +142,10 @@ void Mouse_SetData(void)
 		} else if (y < -128) {
 			MouseSt |= 0x80;
 			MouseY = -128;
-		} else
+		} else {
 			MouseY = (signed char)y;
+		}
 
-		MousePosX = (TextDotX / 2);
-		MousePosY = (TextDotY / 2);
-		getmaincenter(window, &pt);
 		gdk_window_set_pointer(window->window, pt.x, pt.y);
 	} else {
 		MouseSt = 0;
@@ -208,31 +204,7 @@ getmaincenter(GtkWidget *w, POINT *p)
 	p->y = w->allocation.y + w->allocation.height / 2;
 }
 
-#if GTK_MAJOR_VERSION == 2
-#include <gdk/x11/gdkx.h>
-#include <gdk/x11/gdkdrawable-x11.h>
-#include <gdk/x11/gdkscreen-x11.h>
-#include <gdk/x11/gdkwindow-x11.h>
-
-void
-gdk_window_set_pointer(GdkWindow *window, gint x, gint y)
-{
-	GdkScreen *screen;
-	GdkScreenX11 *screen_x11;
-
-	if (window == 0) {
-		screen = gdk_screen_get_default();
-		window = gdk_screen_get_root_window(screen);
-	} else
-		screen = gdk_drawable_get_screen(window);
-	if (GDK_WINDOW_DESTROYED(window))
-		return;
-
-	screen_x11 = GDK_SCREEN_X11(screen);
-	XWarpPointer(screen_x11->xdisplay, None, GDK_WINDOW_XID(window),
-	    0, 0, 0, 0, x, y);
-}
-#elif GTK_MAJOR_VERSION == 1
+#if GTK_MAJOR_VERSION == 1
 #include <gdk/gdkprivate.h>
 
 void
@@ -250,4 +222,22 @@ gdk_window_set_pointer(GdkWindow *window, gint x, gint y)
 	XWarpPointer(private->xdisplay, None, private->xwindow,
 	    0, 0, 0, 0, x, y);
 }
-#endif
+#else	/* GTK_MAJOR_VERSION != 1 */
+#include <gdk/gdkx.h>
+
+void
+gdk_window_set_pointer(GdkWindow *window, gint x, gint y)
+{
+	GdkScreen *screen;
+
+	if (window == NULL) {
+		screen = gdk_screen_get_default();
+		window = gdk_screen_get_root_window(screen);
+	}
+	if (GDK_WINDOW_DESTROYED(window))
+		return;
+
+	XWarpPointer(GDK_WINDOW_XDISPLAY(window), None, GDK_WINDOW_XID(window),
+	    0, 0, 0, 0, x, y);
+}
+#endif	/* GTK_MAJOR_VERSION == 1 */
