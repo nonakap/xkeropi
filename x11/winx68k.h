@@ -39,6 +39,7 @@ extern GtkWidget *menubar;
 extern GtkWidget *drawarea;
 extern GdkPixmap *splash_pixmap;
 
+BOOL is_installed_idle_process(void);
 void install_idle_process(void);
 void uninstall_idle_process(void);
 

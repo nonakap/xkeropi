@@ -2,7 +2,7 @@
 //	FM Sound Generator - Core Unit
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
-//	$Id: fmgen.cpp,v 1.33 2001/03/29 13:36:31 cisc Exp $
+//	$Id: fmgen.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 // ---------------------------------------------------------------------------
 //	»²¹Í:
 //		FM sound generator for M.A.M.E., written by Tatsuyuki Satoh.

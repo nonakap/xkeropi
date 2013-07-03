@@ -1,6 +1,38 @@
-// ---------------------------------------------------------------------------------------
-//  WINUI.C - UI関連
-// ---------------------------------------------------------------------------------------
+/*	$Id: winui.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+
+/* 
+ * Copyright (c) 2003 NONAKA Kimihiro
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgment:
+ *      This product includes software developed by NONAKA Kimihiro.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* -------------------------------------------------------------------------- *
+ *  WINUI.C - UI関連                                                          *
+ * -------------------------------------------------------------------------- */
 
 #include <sys/stat.h>
 #include <errno.h>
@@ -123,7 +155,7 @@ WinUI_Init(void)
 	/*
 	 * イベント設定
 	 */
-	gtk_widget_add_events(window, EVENT_MASK);
+	gtk_widget_add_events(GTK_WIDGET(window), EVENT_MASK);
 
 	/*
 	 * タイトルバー変更用タイマ
@@ -265,24 +297,24 @@ wm_timer(gpointer data)
 	if (fddblink) {
 		char buf[256];
 #ifdef WIN68DEBUG
-		snprintf(buf, sizeof(buf),
+		g_snprintf(buf, sizeof(buf),
 		    "%s - %2d fps / %2d.%03d MHz  PC:%08X",
 		    PrgTitle, FrameCount, (freq/1000), (freq%1000), regs.pc);
 #else
 		if ( juliet_YM2151IsEnable() ) {
-			snprintf(buf, sizeof(buf),
+			g_snprintf(buf, sizeof(buf),
 			    "%s v%s w/ ROMEO - %2d fps / %2d.%03d MHz",
 			    PrgTitle, APP_VER_STRING,
 			    FrameCount, (freq/1000), (freq%1000));
 		} else {
-			snprintf(buf, sizeof(buf),
+			g_snprintf(buf, sizeof(buf),
 			    "%s v%s - %2d fps / %2d.%03d MHz",
 			    PrgTitle, APP_VER_STRING,
 			    FrameCount, (freq/1000), (freq%1000));
 		}
 #endif
 		FrameCount = 0;
-		gtk_window_set_title(GTK_WINDOW((GtkWidget *)data), buf);
+		gtk_window_set_title(GTK_WINDOW(data), buf);
 	}
 	fddblink ^= 1;
 
@@ -585,7 +617,7 @@ exit_from_menu(gpointer data, guint action, GtkWidget *w)
 	UNUSED(action);
 	UNUSED(w);
 
-	gtk_widget_destroy(GTK_WIDGET(window));
+	gtk_main_quit();
 }
 
 static void
@@ -652,7 +684,7 @@ videoreg_save(gpointer data, guint action, GtkWidget *w)
 	UNUSED(w);
 
 	DSound_Stop();
-	snprintf(buf, sizeof(buf),
+	g_snprintf(buf, sizeof(buf),
 	             "VCReg 0:$%02X%02X 1:$%02x%02X 2:$%02X%02X  "
 	             "CRTC00/02/05/06=%02X/%02X/%02X/%02X%02X  "
 		     "BGHT/HD/VD=%02X/%02X/%02X   $%02X/$%02X",

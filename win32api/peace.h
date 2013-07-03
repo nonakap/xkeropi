@@ -1,4 +1,4 @@
-/*	$Id: peace.h,v 1.1 2001/08/05 15:48:37 nonaka Exp $	*/
+/*	$Id: peace.h,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
 
 #ifndef	__NP2_PEACE_H__
 #define	__NP2_PEACE_H__

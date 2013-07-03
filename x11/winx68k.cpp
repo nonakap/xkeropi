@@ -1,4 +1,4 @@
-/*	$Id$	*/
+/*	$Id: winx68k.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
 
 #ifdef  __cplusplus
 extern "C" {
@@ -567,7 +567,14 @@ idle_process_splash(gpointer *p)
 	return TRUE;
 }
 
-static int idle_id;
+static int idle_id = -1;
+
+BOOL
+is_installed_idle_process(void)
+{
+
+	return (idle_id == -1) ? FALSE : TRUE;
+}
 
 void
 install_idle_process(void)
@@ -581,7 +588,7 @@ uninstall_idle_process(void)
 {
 
 	gtk_idle_remove(idle_id);
-	idle_id = 0;
+	idle_id = -1;
 }
 
 
@@ -606,9 +613,8 @@ main(int argc, char *argv[])
 
 	/* ウィンドウの作成 */
 	window = gtk_window_new(GTK_WINDOW_TOPLEVEL);
-	gtk_widget_set_uposition(window, winx, winy);
 
-	main_vbox = gtk_vbox_new(FALSE, 1);
+	main_vbox = gtk_vbox_new(FALSE, 2);
 	gtk_container_border_width(GTK_CONTAINER(main_vbox), 1);
 	gtk_container_add(GTK_CONTAINER(window), main_vbox);
 	gtk_widget_show(main_vbox);
@@ -626,6 +632,7 @@ main(int argc, char *argv[])
 	gtk_widget_show(drawarea);
 
 	gtk_widget_realize(window);
+	gtk_widget_set_uposition(GTK_WIDGET(window), winx, winy);
 
 	/* タイトルやらアイコンやらのセットアップ */
 	gtk_window_set_title(GTK_WINDOW(window), APPNAME);

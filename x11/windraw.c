@@ -1,4 +1,34 @@
-/*	$Id$	*/
+/*	$Id: windraw.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
+
+/* 
+ * Copyright (c) 2003 NONAKA Kimihiro
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgment:
+ *      This product includes software developed by NONAKA Kimihiro.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
 
 #include "common.h"
 #include "winx68k.h"
@@ -156,10 +186,15 @@ void WinDraw_ChangeSize(void)
 	}
 	if (surface) {
 		bzero(ScrBuf, FULLSCREEN_WIDTH * FULLSCREEN_HEIGHT * 2);
+#if 1
+		gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE,
+		    0, 0, FULLSCREEN_WIDTH, FULLSCREEN_HEIGHT);
+#else
 		gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE,
 		    oldx, 0, FULLSCREEN_WIDTH - oldx, FULLSCREEN_HEIGHT);
 		gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE,
 		    0, oldy, FULLSCREEN_WIDTH - oldx, FULLSCREEN_HEIGHT - oldy);
+#endif
 	}
 
 	WinDraw_InitWindowSize((WORD)WindowX, (WORD)WindowY);
@@ -287,6 +322,7 @@ WinDraw_Cleanup(void)
 		surface = 0;
 		ScrBuf = 0;
 	}
+	gdk_window_get_position(window->window, &winx, &winy);
 }
 
 void
@@ -303,7 +339,7 @@ WinDraw_Draw(void)
 	GdkDrawable *d = (GdkDrawable *)drawarea->window;
 
 	FrameCount++;
-	if (!Draw_DrawFlag)
+	if (!Draw_DrawFlag && is_installed_idle_process())
 		return;
 	Draw_DrawFlag = 0;
 

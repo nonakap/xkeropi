@@ -1,4 +1,4 @@
-/*	$Id$	*/
+/*	$Id: windraw.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
 
 #ifndef _winx68k_windraw_h
 #define _winx68k_windraw_h

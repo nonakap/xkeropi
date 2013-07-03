@@ -5,10 +5,6 @@
 extern "C" {
 #endif
 
-extern HWND	hWndStat;
-extern RECT	rectStat;
-extern int	heightStat;
-
 void StatBar_Redraw(void);
 void StatBar_Show(int sw);
 void StatBar_Draw(DRAWITEMSTRUCT* dis);

@@ -1,4 +1,4 @@
-/*	$Id$	*/
+/*	$Id: juliet.c,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
 
 #include	"common.h"
 #include	"juliet.h"

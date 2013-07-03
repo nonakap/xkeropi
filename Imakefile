@@ -1,4 +1,4 @@
-XCOMM	$Id$
+XCOMM	$Id: Imakefile,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $
 
 #include "config.tmpl"
 

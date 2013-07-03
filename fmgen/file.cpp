@@ -1,4 +1,4 @@
-//	$Id: file.cpp,v 1.6 1999/12/28 11:14:05 cisc Exp $
+//	$Id: file.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #include "headers.h"
 #include "file.h"

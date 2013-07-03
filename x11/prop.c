@@ -1,6 +1,38 @@
-// ---------------------------------------------------------------------------------------
-//  PROP.C - 各種設定用プロパティシートと設定値管理
-// ---------------------------------------------------------------------------------------
+/*	$Id: prop.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
+
+/* 
+ * Copyright (c) 2003 NONAKA Kimihiro
+ * All rights reserved.
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions
+ * are met:
+ * 1. Redistributions of source code must retain the above copyright
+ *    notice, this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright
+ *    notice, this list of conditions and the following disclaimer in the
+ *    documentation and/or other materials provided with the distribution.
+ * 3. All advertising materials mentioning features or use of this software
+ *    must display the following acknowledgment:
+ *      This product includes software developed by NONAKA Kimihiro.
+ * 4. The name of the author may not be used to endorse or promote products
+ *    derived from this software without specific prior written permission.
+ *
+ * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
+ * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
+ * OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+ * IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR ANY DIRECT, INDIRECT,
+ * INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
+ * NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
+ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
+ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
+ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+ * THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+ */
+
+/* -------------------------------------------------------------------------- *
+ *  PROP.C - 各種設定用プロパティシートと設定値管理                           *
+ * -------------------------------------------------------------------------- */
 
 #include <sys/stat.h>
 
@@ -378,6 +410,7 @@ dialog_destroy(GtkWidget *w, GtkWidget **wp)
 {
 
         UNUSED(wp);
+
 	gtk_widget_destroy(w);
 	install_idle_process();
 }
@@ -385,6 +418,9 @@ dialog_destroy(GtkWidget *w, GtkWidget **wp)
 /*
  * Config dialog
  */
+static void config_ok_button_clicked(GtkButton *b, gpointer d);
+static void config_accept_button_clicked(GtkButton *b, gpointer d);
+
 void
 PropPage_Init(void)
 {
@@ -400,7 +436,7 @@ PropPage_Init(void)
 
 	ConfigProp = Config;
 
-	dialog = gtk_window_new(GTK_WINDOW_DIALOG);
+	dialog = gtk_window_new(GTK_WINDOW_TOPLEVEL);
 	gtk_window_set_title(GTK_WINDOW(dialog), "Configure Keropi");
 	gtk_window_set_position(GTK_WINDOW(dialog), GTK_WIN_POS_CENTER);
 	gtk_window_set_modal(GTK_WINDOW(dialog), TRUE);
@@ -452,8 +488,8 @@ PropPage_Init(void)
 	ok_button = gtk_button_new_with_label("OK");
 	gtk_table_attach_defaults(GTK_TABLE(dialog_table), ok_button,
 	    1, 2, 9, 10);
-	gtk_signal_connect_object(GTK_OBJECT(ok_button), "clicked",
-	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	gtk_signal_connect(GTK_OBJECT(ok_button), "clicked",
+		    GTK_SIGNAL_FUNC(config_ok_button_clicked), dialog);
 	GTK_WIDGET_SET_FLAGS(ok_button, GTK_CAN_DEFAULT);
 	GTK_WIDGET_SET_FLAGS(ok_button, GTK_HAS_DEFAULT);
 	gtk_widget_grab_default(ok_button);
@@ -464,18 +500,33 @@ PropPage_Init(void)
 	gtk_table_attach_defaults(GTK_TABLE(dialog_table), cancel_button,
 	    2, 3, 9, 10);
 	gtk_signal_connect_object(GTK_OBJECT(cancel_button), "clicked",
-	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog));
 	gtk_widget_show(cancel_button);
 
 	accept_button = gtk_button_new_with_label("Accept");
 	gtk_container_set_border_width(GTK_CONTAINER(accept_button), 5);
 	gtk_table_attach_defaults(GTK_TABLE(dialog_table), accept_button,
 	    3, 4, 9, 10);
-	gtk_signal_connect_object(GTK_OBJECT(accept_button), "clicked",
-	    GTK_SIGNAL_FUNC(gtk_widget_destroy), GTK_OBJECT(dialog)); // XXX
+	gtk_signal_connect(GTK_OBJECT(accept_button), "clicked",
+		    GTK_SIGNAL_FUNC(config_accept_button_clicked), dialog);
 	gtk_widget_show(accept_button);
 
 	gtk_widget_show(dialog);
+}
+
+static void
+config_ok_button_clicked(GtkButton *b, gpointer d)
+{
+
+	Config = ConfigProp;
+	gtk_widget_destroy(GTK_WIDGET(d));
+}
+
+static void
+config_accept_button_clicked(GtkButton *b, gpointer d)
+{
+
+	Config = ConfigProp;
 }
 
 /*
@@ -920,6 +971,18 @@ mouse_speed_rate_value_changed(GtkAdjustment *adj, gpointer d)
 /*
  * Others note
  */
+static void others_sasi_hdd_index_entry_changed(GtkEditable *e, gpointer d);
+static void others_sasi_hdd_new_button_clicked(GtkButton *b, gpointer d);
+static void others_sasi_hdd_remove_button_clicked(GtkButton *b, gpointer d);
+static void others_sasi_hdd_browse_button_clicked(GtkButton *b, gpointer d);
+static void others_show_fdd_status_button_clicked(GtkButton *b, gpointer d);
+static void others_enable_virus_button_clicked(GtkButton *b, gpointer d);
+
+typedef struct {
+	int idx;
+	GtkWidget *entry;
+} sasi_hdd_t;
+
 static GtkWidget *
 create_others_note(void)
 {
@@ -927,6 +990,7 @@ create_others_note(void)
 		"0", "1", "2", "3", "4", "5", "6", "7", "8",
 		"9", "10", "11", "12", "13", "14", "15",
 	};
+	static sasi_hdd_t sasi_hdd = { 0, 0 };
 
 	GtkWidget *w;
 	GtkWidget *frame;
@@ -967,41 +1031,153 @@ create_others_note(void)
 	gtk_table_attach_defaults(GTK_TABLE(table), combo, 1, 2, 0, 1);
 	gtk_widget_show(combo);
 
+	entry = GTK_COMBO(combo)->entry;
+	gtk_entry_set_editable(GTK_ENTRY(entry), FALSE);
+	gtk_signal_connect(GTK_OBJECT(entry), "changed",
+		    GTK_SIGNAL_FUNC(others_sasi_hdd_index_entry_changed),
+		    &sasi_hdd);
+	gtk_widget_show(entry);
+
 	button = gtk_button_new_with_label("Remove");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_table_attach_defaults(GTK_TABLE(table), button, 3, 4, 0, 1);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(others_sasi_hdd_remove_button_clicked),
+		    &sasi_hdd);
 	gtk_widget_show(button);
 
 	button = gtk_button_new_with_label("New");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_table_attach_defaults(GTK_TABLE(table), button, 4, 5, 0, 1);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(others_sasi_hdd_new_button_clicked),
+		    &sasi_hdd);
+#if 1
+	gtk_widget_set_sensitive(button, FALSE);
+#endif
 	gtk_widget_show(button);
 
 	label = gtk_label_new("Filename:");
 	gtk_table_attach_defaults(GTK_TABLE(table), label, 0, 1, 1, 2);
 	gtk_widget_show(label);
 
-	entry = gtk_entry_new();
+	sasi_hdd.entry = entry = gtk_entry_new();
 	gtk_entry_set_max_length(GTK_ENTRY(entry), MAX_PATH - 1);
+	gtk_entry_set_editable(GTK_ENTRY(entry), FALSE);
 	gtk_table_attach_defaults(GTK_TABLE(table), entry, 1, 4, 1, 2);
 	gtk_widget_show(entry);
+	gtk_entry_set_text(GTK_ENTRY(entry), Config.HDImage[0]);
 
 	button = gtk_button_new_with_label("Browse...");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_table_attach_defaults(GTK_TABLE(table), button, 4, 5, 1, 2);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(others_sasi_hdd_browse_button_clicked),
+		    &sasi_hdd);
 	gtk_widget_show(button);
 
 	button = gtk_check_button_new_with_label("Show FDD status");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_box_pack_start(GTK_BOX(w), button, FALSE, FALSE, 0);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(others_show_fdd_status_button_clicked), 0);
+#if 1
+	gtk_widget_set_sensitive(button, FALSE);
+#else
+	if (Config.WindowFDDStat)
+		gtk_signal_emit_by_name(GTK_OBJECT(button), "clicked");
+#endif
 	gtk_widget_show(button);
 
 	button = gtk_check_button_new_with_label("Enable SRAM virus warning");
 	gtk_container_set_border_width(GTK_CONTAINER(button), 5);
 	gtk_box_pack_start(GTK_BOX(w), button, FALSE, FALSE, 0);
+	gtk_signal_connect(GTK_OBJECT(button), "clicked",
+		    GTK_SIGNAL_FUNC(others_enable_virus_button_clicked), 0);
+	if (Config.SRAMWarning)
+		gtk_signal_emit_by_name(GTK_OBJECT(button), "clicked");
 	gtk_widget_show(button);
 
 	return w;
+}
+
+static void
+others_sasi_hdd_index_entry_changed(GtkEditable *e, gpointer d)
+{
+	sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)d;
+	char *str;
+	char *ep;
+
+	str = gtk_editable_get_chars(GTK_EDITABLE(e), 0, -1);
+	if (str) {
+		unsigned long val;
+
+		errno = 0;
+		val = strtoul(str, &ep, 10);
+		/* Not a number */
+		if (str[0] == '\0' || *ep != '\0')
+			val = 0;
+		/* Out of range */
+		if (errno == ERANGE && val == ULONG_MAX)
+			val = 0;
+		sasi_hdd->idx = (int)val;
+
+		if (sasi_hdd->idx >= 0 && sasi_hdd->idx < 16) {
+			gtk_entry_set_text(GTK_ENTRY(sasi_hdd->entry),
+			    ConfigProp.HDImage[sasi_hdd->idx]);
+		}
+	}
+}
+
+static void
+others_sasi_hdd_new_button_clicked(GtkButton *b, gpointer d)
+{
+	sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)d;
+	gchar *path = gtk_entry_get_text(GTK_ENTRY(sasi_hdd->entry));
+
+	UNUSED(b);
+
+	file_selection(3, "Create SASI HDD", path, d);
+}
+
+static void
+others_sasi_hdd_remove_button_clicked(GtkButton *b, gpointer d)
+{
+	sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)d;
+
+	UNUSED(b);
+
+	bzero(ConfigProp.HDImage[sasi_hdd->idx], sizeof(ConfigProp.HDImage));
+	gtk_entry_set_text(GTK_ENTRY(sasi_hdd->entry), ConfigProp.HDImage[sasi_hdd->idx]);
+}
+
+static void
+others_sasi_hdd_browse_button_clicked(GtkButton *b, gpointer d)
+{
+	sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)d;
+	gchar *path = gtk_entry_get_text(GTK_ENTRY(sasi_hdd->entry));
+
+	UNUSED(b);
+
+	file_selection(2, "SASI HDD", path, d);
+}
+
+static void
+others_show_fdd_status_button_clicked(GtkButton *b, gpointer d)
+{
+
+	UNUSED(d);
+
+	ConfigProp.WindowFDDStat = GTK_TOGGLE_BUTTON(b)->active;
+}
+
+static void
+others_enable_virus_button_clicked(GtkButton *b, gpointer d)
+{
+
+	UNUSED(d);
+
+	ConfigProp.SRAMWarning = GTK_TOGGLE_BUTTON(b)->active;
 }
 
 /*
@@ -1024,11 +1200,42 @@ file_selection_ok(GtkWidget *w, GtkFileSelection *gfs)
 		if (stat(p, &st) == 0) {
 			if (!S_ISDIR(st.st_mode)) {
 				switch (fsp->type) {
-				case 1:	// MIMPI tone map
-					gtk_entry_set_text(GTK_ENTRY(fsp->arg),p);
+				case 1:	// open MIMPI tone map
+					gtk_entry_set_text(GTK_ENTRY(fsp->arg), p);
 					strncpy(ConfigProp.ToneMapFile, p, sizeof(ConfigProp.ToneMapFile));
 					break;
+
+				case 2:	// open SASI HDD
+					{
+					sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)fsp->arg;
+					strncpy(ConfigProp.HDImage[sasi_hdd->idx], p, sizeof(ConfigProp.HDImage[0]));
+					gtk_entry_set_text(GTK_ENTRY(sasi_hdd->entry), p);
+					}
+					break;
 				}
+			}
+		} else if (errno == ENOENT) {
+			switch (fsp->type) {
+			case 3:	// create SASI HDD image
+				{
+				sasi_hdd_t *sasi_hdd = (sasi_hdd_t *)fsp->arg;
+				char buf[0x1000];
+				FILEH *fh;
+				int i;
+
+				fh = File_Create(p, FTYPE_NONE);
+				if (fh == INVALID_HANDLE_VALUE)
+					break;
+
+				bzero(buf, sizeof(buf));
+				for (i = 0; i < 0x2793 /* 40Mb/0x1000 */; ++i)
+					File_Write(fh, buf, 0x1000);
+				File_Close(fh);
+
+				strncpy(ConfigProp.HDImage[sasi_hdd->idx], p, sizeof(ConfigProp.HDImage[0]));
+				gtk_entry_set_text(GTK_ENTRY(sasi_hdd->entry), p);
+				}
+				break;
 			}
 		}
 	}

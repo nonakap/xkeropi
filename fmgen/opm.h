@@ -2,7 +2,7 @@
 //	OPM-like Sound Generator
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
-//	$Id: opm.h,v 1.7 2001/04/15 02:46:10 cisc Exp $
+//	$Id: opm.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #ifndef FM_OPM_H
 #define FM_OPM_H

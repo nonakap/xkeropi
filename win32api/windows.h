@@ -1,4 +1,4 @@
-/*	$Id: windows.h,v 1.3 2001/09/09 05:53:27 nonaka Exp $	*/
+/*	$Id: windows.h,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
 
 #ifndef	__NP2_WIN32EMUL_H__
 #define	__NP2_WIN32EMUL_H__
@@ -9,6 +9,8 @@
 #include <stdarg.h>
 #include <stddef.h>
 #include <string.h>
+#include <limits.h>
+#include <errno.h>
 #include <assert.h>
 
 typedef	signed char	CHAR;

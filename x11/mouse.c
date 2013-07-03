@@ -1,6 +1,4 @@
-/*	$Id$	*/
-
-// MOUSE.C - マウス入力
+/*	$Id: mouse.c,v 1.1.1.1 2003/04/28 18:06:55 nonaka Exp $	*/
 
 /* 
  * Copyright (c) 2003 NONAKA Kimihiro

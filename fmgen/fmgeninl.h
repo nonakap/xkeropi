@@ -2,7 +2,7 @@
 //	FM Sound Generator
 //	Copyright (C) cisc 1998, 2000.
 // ---------------------------------------------------------------------------
-//	$Id: fmgeninl.h,v 1.18 2001/04/15 02:46:10 cisc Exp $
+//	$Id: fmgeninl.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #ifndef FM_GEN_INL_H
 #define FM_GEN_INL_H

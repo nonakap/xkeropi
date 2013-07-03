@@ -2,7 +2,7 @@
 //	OPM interface
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
-//	$Id: opm.cpp,v 1.15 2001/04/15 02:46:10 cisc Exp $
+//	$Id: opm.cpp,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #include "headers.h"
 #include "misc.h"

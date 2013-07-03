@@ -1,4 +1,4 @@
-//	$Id: file.h,v 1.6 1999/11/26 10:14:09 cisc Exp $
+//	$Id: file.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #if !defined(win32_file_h)
 #define win32_file_h

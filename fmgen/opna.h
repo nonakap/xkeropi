@@ -2,7 +2,7 @@
 //	OPN/A/B interface with ADPCM support
 //	Copyright (C) cisc 1998, 2001.
 // ---------------------------------------------------------------------------
-//	$Id: opna.h,v 1.24 2001/04/15 02:46:10 cisc Exp $
+//	$Id: opna.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #ifndef FM_OPNA_H
 #define FM_OPNA_H

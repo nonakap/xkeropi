@@ -2,7 +2,7 @@
 //	LPF module for FM sound generator
 //	Copyright (C) cisc 2001.
 // ---------------------------------------------------------------------------
-//	$Id$
+//	$Id: fmfilter.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #ifndef FMFILTER_H
 #define FMFILTER_H

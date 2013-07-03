@@ -1,7 +1,9 @@
-#ifndef winx1_dsound_h
-#define winx1_dsound_h
+/*	$Id: dswin.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $	*/
 
-#include	"common.h"
+#ifndef dswin_h__
+#define dswin_h__
+
+#include "common.h"
 
 int DSound_Init(unsigned long rate, unsigned long length);
 int DSound_Cleanup(void);
@@ -17,4 +19,4 @@ void DS_SetVolumeMercury(long vol);
 
 extern DWORD ratebase1000;
 
-#endif //winx1_dsound_h
+#endif /* dswin_h__ */

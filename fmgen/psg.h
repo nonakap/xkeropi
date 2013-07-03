@@ -2,7 +2,7 @@
 //	PSG-like sound generator
 //	Copyright (C) cisc 1997, 1999.
 // ---------------------------------------------------------------------------
-//	$Id: psg.h,v 1.6 2000/09/08 13:45:57 cisc Exp $
+//	$Id: psg.h,v 1.1.1.1 2003/04/28 18:06:56 nonaka Exp $
 
 #ifndef PSG_H
 #define PSG_H

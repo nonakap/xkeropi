@@ -32,7 +32,9 @@ typedef union {
 #ifdef __cplusplus
 extern "C" {
 #endif
+
 void Error(const char* s);
+
 #ifdef __cplusplus
 }
 #endif
