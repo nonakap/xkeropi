@@ -7,7 +7,8 @@ XCOMM disable mercury unit
 #define	NO_MERCURY
 
 XCOMM for Opt.
-XCOMM CDEBUGFLAGS= -O3 -mpentiumpro
+CDEBUGFLAGS= -O3 -m486
+CDEBUGFLAGS+= -funroll-loops -fomit-frame-pointer
 
 XCOMM for DEBUG
 XCOMM CDEBUGFLAGS= -g -O2

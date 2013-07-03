@@ -125,6 +125,14 @@ void WinDraw_ChangeSize(void)
 			gdk_image_destroy(scaled_screen);
 		scaled_screen = gdk_image_new(GDK_IMAGE_FASTEST,
 		    surface->visual, WindowX, WindowY);
+		assert(scaled_screen);
+	}
+	if (surface) {
+		bzero(ScrBuf, FULLSCREEN_WIDTH * FULLSCREEN_HEIGHT * 2);
+		gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE,
+		    oldx, 0, FULLSCREEN_WIDTH - oldx, FULLSCREEN_HEIGHT);
+		gdk_draw_rectangle(pixmap, window->style->black_gc, TRUE,
+		    0, oldy, FULLSCREEN_WIDTH - oldx, FULLSCREEN_HEIGHT - oldy);
 	}
 
 	WinDraw_InitWindowSize((WORD)WindowX, (WORD)WindowY);
@@ -179,7 +187,7 @@ int WinDraw_Init(void)
 		return FALSE;
 	}
 
-	// 15 or 16 bpp 以外はサポート外
+	/* 15 or 16 bpp 以外はサポート外 */
 	if (visual->depth != 15 && visual->depth != 16) {
 		fprintf(stderr, "No support depth.\n");
 		return FALSE;
@@ -2254,8 +2262,8 @@ gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRecta
 	unsigned int ratio[4];
 	unsigned int x_gcd, y_gcd;
 
-	g_return_val_if_fail(src != NULL, NULL);
-	g_return_val_if_fail((src->visual->depth == 15 || src->visual->depth == 16), NULL);
+	g_return_val_if_fail(src, 0);
+	g_return_val_if_fail((src->visual->depth == 15 || src->visual->depth == 16), 0);
 
 	if (dest_rect == 0) {
 		GdkImage *p = dest ? dest : src;
@@ -2271,12 +2279,12 @@ gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRecta
 		sr.height = src->height;
 	} else {
 		sr = *src_rect;
-		g_return_val_if_fail((sr.x >= 0 && sr.y >= 0), NULL);
+		g_return_val_if_fail((sr.x >= 0 && sr.y >= 0), 0);
 	}
 
-	if (new == NULL) {
+	if (new == 0) {
 		new = gdk_image_new(GDK_IMAGE_FASTEST, src->visual, dr.width + (dr.x > 0 ? dr.x : 0), dr.height + (dr.y > 0 ? dr.y : 0));
-		g_return_val_if_fail(new != NULL, NULL);
+		g_return_val_if_fail(new, 0);
 	}
 
 	x_gcd = gcd(sr.width, dr.width);
@@ -2285,16 +2293,27 @@ gdk_scale_image(GdkImage *dest, GdkImage *src, GdkRectangle *dest_rect, GdkRecta
 	if (x_gcd >= 2 && y_gcd >= 2)
 		/* continue */;
 	else {
-		gdk_image_destroy(new);
-		g_return_val_if_fail((x_gcd >= 2 && y_gcd >= 2), NULL);
+		if (dest == 0)
+			gdk_image_destroy(new);
+		g_return_val_if_fail((x_gcd >= 2 && y_gcd >= 2), 0);
 	}
 
 	ratio[0] /* dx_ratio */ = dr.width / x_gcd;
 	ratio[1] /* sx_ratio */ = sr.width / x_gcd;
 	ratio[2] /* dy_ratio */ = dr.height / y_gcd;
 	ratio[3] /* sy_ratio */ = sr.height / y_gcd;
-	g_return_val_if_fail((ratio[0] >= ratio[1] && ratio[2] >= ratio[3]), NULL);
-
+#if 0
+	if (ratio[0] >= ratio[1] && ratio[2] >= ratio[3])
+		/* continue */;
+	else {
+		printf("sr(width, height) = (%d, %d), dr(width, height) = (%d, %d)\n", sr.width, sr.height, dr.width, dr.height);
+		printf("gcd(x, y) = (%d, %d)\n", x_gcd, y_gcd);
+		printf("ratio(0, 1, 2, 3) = (%d, %d, %d, %d)\n", ratio[0], ratio[1], ratio[2], ratio[3]);
+		if (dest == 0)
+			gdk_image_destroy(new);
+		g_return_val_if_fail((ratio[0] >= ratio[1] && ratio[2] >= ratio[3]), NULL);
+	}
+#endif
 	expand16_fast(new, src, &dr, &sr, ratio);
 
 	return new;

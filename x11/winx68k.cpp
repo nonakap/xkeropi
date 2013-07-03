@@ -52,7 +52,7 @@ extern "C" {
 
 #include "../icons/keropi.xbm"
 
-#define	APPNAME	"けろぴー"
+#define	APPNAME	"Keropi"
 
 extern	WORD	BG_CHREND;
 extern	WORD	BG_BGTOP;
@@ -60,7 +60,7 @@ extern	WORD	BG_BGEND;
 extern	BYTE	BG_CHRSIZE;
 
 const	BYTE	PrgName[] = "Keropi";
-const	BYTE	PrgTitle[] = "けろぴー";
+const	BYTE	PrgTitle[] = APPNAME;
 
 char	winx68k_dir[MAX_PATH];
 char	winx68k_ini[MAX_PATH];
